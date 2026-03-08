@@ -101,9 +101,7 @@ RUN clean-install \
     rsync \
     less \
     build-essential \
-    file        
+    file \
     procps \
     hostname \
-    curl \
-    git \
     openssl
