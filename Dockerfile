@@ -25,7 +25,8 @@ RUN git clone -b v2026.3.2 https://github.com/openclaw/openclaw.git .
 
 
 RUN chown -R node:node /app
-RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile  --registry https://registry.npmmirror.com
+#RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile  --registry https://registry.npmmirror.com
+RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
 
 
 # Normalize copied plugin/agent paths so plugin safety checks do not reject
