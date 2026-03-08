@@ -10,14 +10,11 @@ LABEL org.opencontainers.image.base.name="registry.cnfstack.com/cncfstack/csvm:d
 
 WORKDIR /app
 
-USER root
-
 # Install Bun (required for build scripts)
 #RUN GITHUB='https://gh-proxy.com/https://github.com' curl -fsSL https://bun.sh/install | bash
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:${PATH}"
 RUN corepack enable
-
 
 # install openclaw
 #RUN git clone https://gh-proxy.com/https://github.com/openclaw/openclaw.git /app
@@ -42,15 +39,7 @@ RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw \
 COPY openclaw-in-docker.service /usr/lib/systemd/system/openclaw-in-docker.service
 RUN systemctl enable openclaw-in-docker.service
 
-
-
-
-
-
-#COPY openclaw.json /root/.openclaw/openclaw.json
-#USER node
-#COPY openclaw.json /home/node/.openclaw/openclaw.json
-#USER root
+COPY openclaw.json /root/.openclaw/openclaw.json
 
 ENV NODE_ENV=production
 #ENV OPENAI_API_KEY=fdsafdsafdsafds22rfdsa

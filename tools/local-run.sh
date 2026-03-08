@@ -2,7 +2,7 @@
 
 docker stop openclaw-in-docker 
 docker rm openclaw-in-docker
-docker run -itd --name openclaw-in-docker --privileged -p 18789:18789 -p 18790:18790 registry.cncfstack.com/cncfstack/openclaw-in-docker:dev
+docker run -itd --name openclaw-in-docker --network host --privileged  registry.cncfstack.com/cncfstack/openclaw-in-docker:dev
 docker logs openclaw-in-docker
 
 
@@ -15,3 +15,4 @@ docker logs openclaw-in-docker
 # Workspace OK: ~/.openclaw/workspace
 # Sessions OK: ~/.openclaw/agents/main/sessions
 
+docker run -itd --name testos --privileged registry.cncfstack.com/cncfstack/csvm:dev

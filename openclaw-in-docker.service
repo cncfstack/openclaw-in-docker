@@ -1,20 +1,41 @@
 [Unit]
-Description=OpenClaw In Docker Gateway Service
+Description=OpenClaw AI Gateway
 After=network.target
-Wants=network.target
 
 [Service]
 Type=simple
-User=node
-Group=node
+User=openclaw
+Group=openclaw
 WorkingDirectory=/app
-Environment=NODE_ENV=production
-Environment=OPENCLAW_PREFER_PNPM=1
-ExecStart=/usr/local/bin/node /app/dist/index.js gateway  --bind lan --port 18789  --allow-unconfigured
+
+# Environment variables
+Environment="PNPM_HOME=/home/openclaw/.local/share/pnpm"
+Environment="PATH=/home/openclaw/.local/bin:/home/openclaw/.local/share/pnpm:/usr/local/bin:/usr/bin:/bin"
+Environment="HOME=/home/openclaw"
+#Environment="XDG_RUNTIME_DIR=/run/user/{{ openclaw_uid_value }}"
+
+# DBus session bus
+#Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{{ openclaw_uid_value }}/bus"
+
+# Start command
+ExecStart=openclaw gateway
+
+# Restart policy
 Restart=always
 RestartSec=10
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/openclaw/.openclaw
+ReadWritePaths=/home/openclaw/.local
+
+# Logging
 StandardOutput=journal
 StandardError=journal
+SyslogIdentifier=openclaw
 
 [Install]
 WantedBy=multi-user.target
