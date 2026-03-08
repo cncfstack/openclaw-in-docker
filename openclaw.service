@@ -9,7 +9,7 @@ Group=root
 WorkingDirectory=/app
 
 # Start command
-ExecStart=openclaw gateway --allow-unconfigured
+ExecStart=openclaw gateway --allow-unconfigured --bind lan
 
 # Restart policy
 Restart=always
