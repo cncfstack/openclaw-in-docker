@@ -21,7 +21,7 @@ RUN corepack enable
 
 # install openclaw
 #RUN git clone https://gh-proxy.com/https://github.com/openclaw/openclaw.git /app
-RUN git clone https://github.com/openclaw/openclaw.git .
+RUN git clone -b v2026.3.2 https://github.com/openclaw/openclaw.git .
 
 
 RUN chown -R node:node /app
