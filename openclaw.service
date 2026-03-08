@@ -8,6 +8,11 @@ User=root
 Group=root
 WorkingDirectory=/app
 
+ExecStartPre=/bin/bash -c 'if [ ! -f ${HOME}/.openclaw/openclaw.json ]; then \
+    echo '"'"'{"gateway":{"controlUi":{"dangerouslyAllowHostHeaderOriginFallback":true,"allowInsecureAuth":true}}}'"'"' > ${HOME}/.openclaw/openclaw.json && \
+    chmod 600 ${HOME}/.openclaw/openclaw.json; \
+fi'
+
 # Start command
 ExecStart=openclaw gateway --allow-unconfigured --bind lan
 
