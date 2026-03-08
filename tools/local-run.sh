@@ -2,7 +2,9 @@
 
 docker stop openclaw-in-docker 
 docker rm openclaw-in-docker
-docker run -itd --name openclaw-in-docker --network host --privileged --pull always registry.cncfstack.com/cncfstack/openclaw-in-docker:dev
+docker run -itd --name openclaw-in-docker --network host --privileged --pull always \
+ -v ~/data/rootopenclaw:/root/.openclaw \
+ registry.cncfstack.com/cncfstack/openclaw-in-docker:dev
 docker logs -f openclaw-in-docker
 
 

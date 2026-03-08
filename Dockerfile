@@ -20,7 +20,6 @@ RUN corepack enable
 #RUN git clone https://gh-proxy.com/https://github.com/openclaw/openclaw.git /app
 RUN git clone -b v2026.3.2 https://github.com/openclaw/openclaw.git .
 
-
 RUN chown -R node:node /app
 #RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile  --registry https://registry.npmmirror.com
 RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
@@ -29,15 +28,11 @@ RUN pnpm build
 RUN pnpm ui:install
 RUN pnpm ui:build
 
-
 # Expose the CLI binary without requiring npm global writes as non-root.
-RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw \
- && chmod 755 /app/openclaw.mjs
+RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw chmod 755 /app/openclaw.mjs 
 
-COPY openclaw-in-docker.service /usr/lib/systemd/system/openclaw-in-docker.service
+COPY openclaw.service /usr/lib/systemd/system/openclaw.service
 RUN systemctl enable openclaw-in-docker.service
-
-#COPY openclaw.json /root/.openclaw/openclaw.json
 
 ENV NODE_ENV=production
 
@@ -62,6 +57,7 @@ ENV NODE_ENV=production
 #           PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright \
 #           node /app/node_modules/playwright-core/cli.js install --with-deps chromium && \
 #           chown -R node:node /home/node/.cache/ms-playwright
+##Xvfb :1 -screen 0 1280x800x24 -ac -nolisten tcp &
 
 # # Install chromium
 # RUN  clean-install  chromium websockify  x11vnc novnc

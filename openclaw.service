@@ -18,8 +18,8 @@ RestartSec=10
 # Security hardening
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectSystem=strict
-ProtectHome=read-only
+#ProtectSystem=strict      # 使 /usr、/boot、/etc 变为只读
+#ProtectHome=read-only     # 使 /home、/root、/run/user 变为只读
 #ReadWritePaths=/root/openclaw/.openclaw
 #ReadWritePaths=/root/openclaw/.local
 
