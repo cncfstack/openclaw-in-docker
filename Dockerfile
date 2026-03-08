@@ -30,78 +30,44 @@ RUN pnpm ui:install
 RUN pnpm ui:build
 
 
-
 # Expose the CLI binary without requiring npm global writes as non-root.
-#USER root
 RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw \
  && chmod 755 /app/openclaw.mjs
 
 COPY openclaw-in-docker.service /usr/lib/systemd/system/openclaw-in-docker.service
 RUN systemctl enable openclaw-in-docker.service
 
-COPY openclaw.json /root/.openclaw/openclaw.json
+#COPY openclaw.json /root/.openclaw/openclaw.json
 
 ENV NODE_ENV=production
-#ENV OPENAI_API_KEY=fdsafdsafdsafds22rfdsa
-
-RUN mkdir -p /root/.openclaw/workspace
 
 
-# Optionally install Chromium and Xvfb for browser automation.
-# Build with: docker build --build-arg OPENCLAW_INSTALL_BROWSER=1 ...
-# Adds ~300MB but eliminates the 60-90s Playwright install on every container start.
-# Must run after pnpm install so playwright-core is available in node_modules.
-# USER root
-# ARG OPENCLAW_INSTALL_BROWSER="1"
-# RUN if [ -n "$OPENCLAW_INSTALL_BROWSER" ]; then \
-#       apt-get update && \
-#       DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends xvfb && \
-#       mkdir -p /home/node/.cache/ms-playwright && \
-#       PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright \
-#       node /app/node_modules/playwright-core/cli.js install --with-deps chromium && \
-#       chown -R node:node /home/node/.cache/ms-playwright && \
-#       apt-get clean && \
-#       rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*; \
-#     fi
+# RUN clean-install \
+#     ca-certificates openssl curl wget telnet  gnupg hostname lsb-release  bash build-essential \
+#     netcat-openbsd \
+#     net-tools \
+#     openssh  tmux \
+#     fonts-liberation \
+#     fonts-noto-color-emoji
 
-RUN clean-install \
-    ca-certificates \
-    curl \
-    gnupg \
-    lsb-release \
-    openssh-server \
-    fail2ban \
-    vim \
-    nano \
-    git \
-    git-lfs \
-    curl \
-    wget \
-    netcat-openbsd \
-    net-tools \
-    dnsutils \
-    iputils-ping \
-    traceroute \
-    tcpdump \
-    nmap \
-    socat \
-    telnet \
-    strace \
-    lsof \
-    gdb \
-    htop \
-    iotop \
-    iftop \
-    sysstat \
-    procps \
-    tmux \
-    tree \
-    jq \
-    unzip \
-    rsync \
-    less \
-    build-essential \
-    file \
-    procps \
-    hostname \
-    openssl
+# # Install File Management Tools
+# RUN clean-install vim nano file unzip rsync less tree
+
+# # Install Dev Ops tools
+# RUN clean-install procps iotop iftop sysstat procps htop gdb strace nmap socat tcpdump traceroute dnsutils iputils-ping lsof
+
+# # Install playwright
+# RUN  clean-install  xvfb && \
+#           mkdir -p /home/node/.cache/ms-playwright && \
+#           PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright \
+#           node /app/node_modules/playwright-core/cli.js install --with-deps chromium && \
+#           chown -R node:node /home/node/.cache/ms-playwright
+
+# # Install chromium
+# RUN  clean-install  chromium websockify  x11vnc novnc
+
+# # Install Git
+# RUN clean-install git git-lfs
+
+# # Install data processing tools
+# RUN clean-install jq python3

@@ -4,21 +4,12 @@ After=network.target
 
 [Service]
 Type=simple
-User=openclaw
-Group=openclaw
+User=root
+Group=root
 WorkingDirectory=/app
 
-# Environment variables
-Environment="PNPM_HOME=/home/openclaw/.local/share/pnpm"
-Environment="PATH=/home/openclaw/.local/bin:/home/openclaw/.local/share/pnpm:/usr/local/bin:/usr/bin:/bin"
-Environment="HOME=/home/openclaw"
-#Environment="XDG_RUNTIME_DIR=/run/user/{{ openclaw_uid_value }}"
-
-# DBus session bus
-#Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{{ openclaw_uid_value }}/bus"
-
 # Start command
-ExecStart=openclaw gateway
+ExecStart=openclaw gateway --allow-unconfigured
 
 # Restart policy
 Restart=always
@@ -29,8 +20,8 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/home/openclaw/.openclaw
-ReadWritePaths=/home/openclaw/.local
+#ReadWritePaths=/root/openclaw/.openclaw
+#ReadWritePaths=/root/openclaw/.local
 
 # Logging
 StandardOutput=journal
