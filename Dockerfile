@@ -33,7 +33,7 @@ RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw && chmod 755 /app/openclaw.
 
 COPY openclaw.json /root/.openclaw/openclaw.json
 COPY openclaw.service /usr/lib/systemd/system/openclaw.service
-RUN systemctl enable openclaw-in-docker.service
+RUN systemctl enable openclaw.service
 
 ENV NODE_ENV=production
 
