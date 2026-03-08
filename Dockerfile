@@ -28,18 +28,8 @@ RUN chown -R node:node /app
 #RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile  --registry https://registry.npmmirror.com
 RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
 
-
-# Normalize copied plugin/agent paths so plugin safety checks do not reject
-# world-writable directories inherited from source file modes.
-RUN for dir in /app/extensions /app/.agent /app/.agents; do \
-      if [ -d "$dir" ]; then \
-        find "$dir" -type d -exec chmod 755 {} +; \
-        find "$dir" -type f -exec chmod 644 {} +; \
-      fi; \
-    done
 RUN pnpm build
-# Force pnpm for UI build (Bun may fail on ARM/Synology architectures)
-ENV OPENCLAW_PREFER_PNPM=1
+RUN pnpm ui:install
 RUN pnpm ui:build
 
 
@@ -85,4 +75,46 @@ RUN mkdir -p /root/.openclaw/workspace
 #       rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*; \
 #     fi
 
-
+RUN clean-install \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
+    openssh-server \
+    fail2ban \
+    vim \
+    nano \
+    git \
+    git-lfs \
+    curl \
+    wget \
+    netcat-openbsd \
+    net-tools \
+    dnsutils \
+    iputils-ping \
+    traceroute \
+    tcpdump \
+    nmap \
+    socat \
+    telnet \
+    strace \
+    lsof \
+    gdb \
+    htop \
+    iotop \
+    iftop \
+    sysstat \
+    procps \
+    tmux \
+    tree \
+    jq \
+    unzip \
+    rsync \
+    less \
+    build-essential \
+    file        
+    procps \
+    hostname \
+    curl \
+    git \
+    openssl
