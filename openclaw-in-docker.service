@@ -1,0 +1,20 @@
+[Unit]
+Description=OpenClaw In Docker Gateway Service
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=node
+Group=node
+WorkingDirectory=/app
+Environment=NODE_ENV=production
+Environment=OPENCLAW_PREFER_PNPM=1
+ExecStart=/usr/local/bin/node /app/dist/index.js gateway  --bind lan --port 18789  --allow-unconfigured
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
