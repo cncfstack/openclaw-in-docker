@@ -30,19 +30,20 @@ RUN echo "Ensuring scripts are executable ..." \
       lz4 \
       sudo
 
-
 # 下载并安装 nodejs
 RUN   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash \      
       && \. "$HOME/.nvm/nvm.sh" \
       && nvm install 22 \
-      && node -v
+      && node -v \
+      && npm -v \
+      && npm install -g corepack@lates \
+      && corepack enable
+ENV PATH="/root/.nvm:${PATH}"
 
 # Install Bun (required for build scripts)
 #RUN GITHUB='https://gh-proxy.com/https://github.com' curl -fsSL https://bun.sh/install | bash
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:${PATH}"
-RUN npm install -g corepack@lates \
-  && corepack enable
 
 # install openclaw
 #RUN git clone https://gh-proxy.com/https://github.com/openclaw/openclaw.git /app
