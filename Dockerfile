@@ -31,18 +31,6 @@ RUN echo "Ensuring scripts are executable ..." \
       sudo
 
 
-# Install playwright
-RUN  clean-install  xvfb && \
-          mkdir -p /home/node/.cache/ms-playwright && \
-          PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright \
-          node /app/node_modules/playwright-core/cli.js install --with-deps chromium && \
-          chown -R node:node /home/node/.cache/ms-playwright
-#Xvfb :1 -screen 0 1280x800x24 -ac -nolisten tcp &
-
-# Install chromium
-RUN  clean-install  chromium websockify  x11vnc novnc
-      
-
 # 下载并安装 nodejs
 RUN   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash \      
       && \. "$HOME/.nvm/nvm.sh" \
@@ -78,3 +66,17 @@ RUN chmod +x /usr/local/bin/openclaw-before.sh /usr/local/bin/openclaw-after.sh 
     && systemctl enable openclaw.service
 
 ENV NODE_ENV=production
+
+# Install playwright
+RUN  clean-install  xvfb && \
+          mkdir -p /home/node/.cache/ms-playwright && \
+          PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright \
+          node /app/node_modules/playwright-core/cli.js install --with-deps chromium && \
+          chown -R node:node /home/node/.cache/ms-playwright
+#Xvfb :1 -screen 0 1280x800x24 -ac -nolisten tcp &
+
+# Install chromium
+RUN  clean-install  chromium websockify  x11vnc novnc
+      
+
+
