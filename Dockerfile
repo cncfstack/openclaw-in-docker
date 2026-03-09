@@ -43,8 +43,6 @@ RUN clean-install nodejs \
     && rm -f /usr/share/keyrings/nodesource.gpg \
     && rm -f /etc/apt/sources.list.d/nodesource.list \
     && rm -f /etc/apt/sources.list.d/nodesource.sources
-ENV NODE_ENV=production
-
 
 # Install Bun (required for build scripts)
 #RUN GITHUB='https://gh-proxy.com/https://github.com' curl -fsSL https://bun.sh/install | bash
