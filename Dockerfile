@@ -49,7 +49,7 @@ ENV PATH="/root/.bun/bin:${PATH}"
 #RUN git clone https://gh-proxy.com/https://github.com/openclaw/openclaw.git /app
 RUN git clone -b v2026.3.2 https://github.com/openclaw/openclaw.git .
 
-RUN chown -R node:node /app
+#RUN chown -R node:node /app
 #RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile  --registry https://registry.npmmirror.com
 RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
 
