@@ -39,9 +39,9 @@ RUN   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh |
       && nvm install 22 \
       && npm install -g corepack pnpm \
       && corepack enable \
-      && node -v \
-      && npm -v \
-      && pnpm -v
+      && node -v  && which node \
+      && npm -v && which npm \
+      && pnpm -v && which pnpm
 
 
 # Install Bun (required for build scripts)
