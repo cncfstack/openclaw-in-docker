@@ -34,11 +34,10 @@ RUN echo "Ensuring scripts are executable ..." \
 RUN   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash \      
       && \. "$HOME/.nvm/nvm.sh" \
       && nvm install 22 \
+      && npm install -g corepack pnpm \
+      && corepack enable \
       && node -v \
       && npm -v \
-      && npm install -g corepack \
-      && corepack enable \
-      && npm install -g pnpm \
       && pnpm -v
 
 ENV PATH="/root/.nvm:${PATH}"
