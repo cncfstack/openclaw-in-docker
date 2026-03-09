@@ -41,7 +41,8 @@ RUN   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh |
 #RUN GITHUB='https://gh-proxy.com/https://github.com' curl -fsSL https://bun.sh/install | bash
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:${PATH}"
-RUN corepack enable
+RUN npm install -g corepack@lates \
+  && corepack enable
 
 # install openclaw
 #RUN git clone https://gh-proxy.com/https://github.com/openclaw/openclaw.git /app
