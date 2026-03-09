@@ -30,6 +30,9 @@ RUN echo "Ensuring scripts are executable ..." \
       lz4 \
       sudo
 
+ENV PATH="/root/.bun/bin:/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ENV NODE_ENV=production
+
 # 下载并安装 nodejs
 RUN   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash \      
       && \. "$HOME/.nvm/nvm.sh" \
@@ -40,12 +43,11 @@ RUN   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh |
       && npm -v \
       && pnpm -v
 
-ENV PATH="/root/.nvm:${PATH}"
 
 # Install Bun (required for build scripts)
 #RUN GITHUB='https://gh-proxy.com/https://github.com' curl -fsSL https://bun.sh/install | bash
 RUN curl -fsSL https://bun.sh/install | bash
-ENV PATH="/root/.bun/bin:${PATH}"
+
 
 # install openclaw
 #RUN git clone https://gh-proxy.com/https://github.com/openclaw/openclaw.git /app
@@ -69,7 +71,7 @@ COPY openclaw.service /usr/lib/systemd/system/openclaw.service
 RUN chmod +x /usr/local/bin/openclaw-before.sh /usr/local/bin/openclaw-after.sh \
     && systemctl enable openclaw.service
 
-ENV NODE_ENV=production
+
 
 # Install playwright
 RUN  clean-install  xvfb && \
