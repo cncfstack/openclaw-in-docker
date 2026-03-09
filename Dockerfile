@@ -30,14 +30,15 @@ RUN echo "Ensuring scripts are executable ..." \
       lz4 \
       sudo
 
-ENV PATH="/root/.bun/bin:/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/bin/versions/node/v22.22.1/bin"
+ENV NODE_VERSION=22.22.1
+ENV PATH="/root/.bun/bin:/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/bin/versions/node/v${NODE_VERSION}/bin"
 ENV NODE_ENV=production
 
 # 下载并安装 nodejs
 RUN   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash \      
       && \. "$HOME/.nvm/nvm.sh" \
-      && nvm install 22.22.1 \
-      && npm install -g corepack pnpm \
+      && nvm install ${NODE_VERSION} \
+      && npm install -g corepack pnpm vite \
       && corepack enable \
       && node -v  && which node \
       && npm -v && which npm \
@@ -55,7 +56,7 @@ RUN git clone -b v2026.3.2 https://github.com/openclaw/openclaw.git .
 
 #RUN chown -R node:node /app
 #RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile  --registry https://registry.npmmirror.com
-RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
+RUN  pnpm install --frozen-lockfile
 
 RUN pnpm build
 RUN pnpm ui:install
