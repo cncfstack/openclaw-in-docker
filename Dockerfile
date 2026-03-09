@@ -1,4 +1,4 @@
-FROM registry.cncfstack.com/cncfstack/csvm:dev
+FROM registry.cncfstack.com/docker.io/kicbase/stable:v0.0.48
 
 LABEL org.opencontainers.image.base.name="registry.cnfstack.com/cncfstack/csvm:dev" \
   org.opencontainers.image.source="https://cncfstack.com" \
@@ -9,6 +9,45 @@ LABEL org.opencontainers.image.base.name="registry.cnfstack.com/cncfstack/csvm:d
   org.opencontainers.image.description="OpenClaw In Docker"
 
 WORKDIR /app
+
+RUN echo "Ensuring scripts are executable ..." \
+    && chmod +x /usr/local/bin/clean-install /usr/local/bin/entrypoint \
+ && echo "Installing Packages ..." \
+    && DEBIAN_FRONTEND=noninteractive clean-install \
+      systemd dbus \
+      conntrack iptables iproute2 ethtool socat util-linux mount ebtables udev kmod \
+      libseccomp2 pigz \
+      bash ca-certificates curl rsync \
+      nfs-common \
+      iputils-ping netcat-openbsd  \
+      openssl  wget telnet  gnupg hostname lsb-release   build-essential \
+      net-tools \
+      openssh-server tmux \
+      vim nano file unzip  less tree \
+      procps iotop iftop sysstat  htop gdb strace nmap  tcpdump traceroute dnsutils lsof \
+      git git-lfs \
+      jq python3 \
+      lz4 \
+      sudo
+
+
+# Install playwright
+RUN  clean-install  xvfb && \
+          mkdir -p /home/node/.cache/ms-playwright && \
+          PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright \
+          node /app/node_modules/playwright-core/cli.js install --with-deps chromium && \
+          chown -R node:node /home/node/.cache/ms-playwright
+#Xvfb :1 -screen 0 1280x800x24 -ac -nolisten tcp &
+
+# Install chromium
+RUN  clean-install  chromium websockify  x11vnc novnc
+      
+
+# 下载并安装 nodejs
+RUN   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash \      
+      && \. "$HOME/.nvm/nvm.sh" \
+      && nvm install 22 \
+      && node -v
 
 # Install Bun (required for build scripts)
 #RUN GITHUB='https://gh-proxy.com/https://github.com' curl -fsSL https://bun.sh/install | bash
@@ -31,40 +70,11 @@ RUN pnpm ui:build
 # Expose the CLI binary without requiring npm global writes as non-root.
 RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw && chmod 755 /app/openclaw.mjs 
 
-COPY openclaw.json /root/.openclaw/openclaw.json
+
+COPY openclaw-before.sh /usr/local/bin/openclaw-before.sh
+COPY openclaw-after.sh  /usr/local/bin/openclaw-after.sh
 COPY openclaw.service /usr/lib/systemd/system/openclaw.service
-RUN systemctl enable openclaw.service
+RUN chmod +x /usr/local/bin/openclaw-before.sh /usr/local/bin/openclaw-after.sh \
+    && systemctl enable openclaw.service
 
 ENV NODE_ENV=production
-
-
-# RUN clean-install \
-#     ca-certificates openssl curl wget telnet  gnupg hostname lsb-release  bash build-essential \
-#     netcat-openbsd \
-#     net-tools \
-#     openssh  tmux \
-#     fonts-liberation \
-#     fonts-noto-color-emoji
-
-# # Install File Management Tools
-# RUN clean-install vim nano file unzip rsync less tree
-
-# # Install Dev Ops tools
-# RUN clean-install procps iotop iftop sysstat procps htop gdb strace nmap socat tcpdump traceroute dnsutils iputils-ping lsof
-
-# # Install playwright
-# RUN  clean-install  xvfb && \
-#           mkdir -p /home/node/.cache/ms-playwright && \
-#           PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright \
-#           node /app/node_modules/playwright-core/cli.js install --with-deps chromium && \
-#           chown -R node:node /home/node/.cache/ms-playwright
-##Xvfb :1 -screen 0 1280x800x24 -ac -nolisten tcp &
-
-# # Install chromium
-# RUN  clean-install  chromium websockify  x11vnc novnc
-
-# # Install Git
-# RUN clean-install git git-lfs
-
-# # Install data processing tools
-# RUN clean-install jq python3

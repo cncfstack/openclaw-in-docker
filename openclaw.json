@@ -1,8 +1,0 @@
-{
-    "gateway": {
-      "controlUi": {
-        "dangerouslyAllowHostHeaderOriginFallback": true,
-        "allowInsecureAuth": true
-      }
-    }
-}
