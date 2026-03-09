@@ -71,8 +71,8 @@ RUN pnpm ui:build
 RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw && chmod 755 /app/openclaw.mjs 
 
 
-COPY openclaw-before.sh /usr/local/bin/openclaw-before.sh
-COPY openclaw-after.sh  /usr/local/bin/openclaw-after.sh
+COPY scripts/openclaw-before.sh /usr/local/bin/openclaw-before.sh
+COPY scripts/openclaw-after.sh  /usr/local/bin/openclaw-after.sh
 COPY openclaw.service /usr/lib/systemd/system/openclaw.service
 RUN chmod +x /usr/local/bin/openclaw-before.sh /usr/local/bin/openclaw-after.sh \
     && systemctl enable openclaw.service
