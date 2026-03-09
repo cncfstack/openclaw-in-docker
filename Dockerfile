@@ -45,6 +45,7 @@ RUN clean-install nodejs \
     && rm -f /etc/apt/sources.list.d/nodesource.sources
 ENV NODE_ENV=production
 
+
 # Install Bun (required for build scripts)
 #RUN GITHUB='https://gh-proxy.com/https://github.com' curl -fsSL https://bun.sh/install | bash
 RUN curl -fsSL https://bun.sh/install | bash
@@ -62,7 +63,7 @@ RUN git clone -b ${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git .
 RUN chown -R node:node /app
 #RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile  --registry https://registry.npmmirror.com
 #RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
-RUN pnpm add vite && pnpm install --frozen-lockfile
+RUN pnpm config set ignore-workspace-root-check true && pnpm add vite -w && pnpm install --frozen-lockfile
 RUN pnpm build
 RUN pnpm ui:install
 RUN pnpm ui:build
