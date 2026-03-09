@@ -1,4 +1,4 @@
-FROM registry.cncfstack.com/cncfstack/csvm:dev
+FROM registry.cncfstack.com/cncfstack/csvm:dev2
 
 LABEL org.opencontainers.image.base.name="registry.cnfstack.com/cncfstack/csvm:dev" \
   org.opencontainers.image.source="https://cncfstack.com" \
