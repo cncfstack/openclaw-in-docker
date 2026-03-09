@@ -36,7 +36,7 @@ RUN   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh |
       && nvm install 22 \
       && node -v \
       && npm -v \
-      && npm install -g corepack@lates \
+      && npm install -g corepack \
       && corepack enable
 ENV PATH="/root/.nvm:${PATH}"
 
