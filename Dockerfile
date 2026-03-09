@@ -10,23 +10,9 @@ LABEL org.opencontainers.image.base.name="registry.cnfstack.com/cncfstack/csvm:d
 
 WORKDIR /app
 
-# Install Node.js
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - 
-RUN clean-install nodejs \
-    && groupadd  node \
-    && useradd  --gid node --shell /bin/bash --create-home node \
-    && node --version \
-    && npm --version \
-    && rm -f /usr/share/keyrings/nodesource.gpg \
-    && rm -f /etc/apt/sources.list.d/nodesource.list \
-    && rm -f /etc/apt/sources.list.d/nodesource.sources
-ENV NODE_ENV=production
-
-# Install Bun (required for build scripts)
-#RUN GITHUB='https://gh-proxy.com/https://github.com' curl -fsSL https://bun.sh/install | bash
-RUN curl -fsSL https://bun.sh/install | bash
-RUN corepack enable
-
+# Install some packages
+# Action:
+# 1. bun --> unzip
 RUN echo "Ensuring scripts are executable ..." \
     && chmod +x /usr/local/bin/clean-install /usr/local/bin/entrypoint \
     && echo "Installing Packages ..." \
@@ -46,6 +32,24 @@ RUN echo "Ensuring scripts are executable ..." \
         jq python3 \
         lz4 \
         sudo
+
+# Install Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - 
+RUN clean-install nodejs \
+    && groupadd  node \
+    && useradd  --gid node --shell /bin/bash --create-home node \
+    && node --version \
+    && npm --version \
+    && rm -f /usr/share/keyrings/nodesource.gpg \
+    && rm -f /etc/apt/sources.list.d/nodesource.list \
+    && rm -f /etc/apt/sources.list.d/nodesource.sources
+ENV NODE_ENV=production
+
+# Install Bun (required for build scripts)
+#RUN GITHUB='https://gh-proxy.com/https://github.com' curl -fsSL https://bun.sh/install | bash
+RUN curl -fsSL https://bun.sh/install | bash
+RUN corepack enable
+
 ENV PATH="/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 
