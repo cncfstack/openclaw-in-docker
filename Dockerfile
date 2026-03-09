@@ -1,4 +1,4 @@
-FROM registry.cncfstack.com/docker.io/kicbase/stable:v0.0.48
+FROM registry.cncfstack.com/cncfstack/csvm:dev
 
 LABEL org.opencontainers.image.base.name="registry.cnfstack.com/cncfstack/csvm:dev" \
   org.opencontainers.image.source="https://cncfstack.com" \
@@ -30,37 +30,28 @@ RUN echo "Ensuring scripts are executable ..." \
       lz4 \
       sudo
 
-ENV NODE_VERSION=22.22.1
-ENV PATH="/root/.bun/bin:/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/bin/versions/node/v${NODE_VERSION}/bin"
+
+ENV PATH="/root/.bun/bin:/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ENV NODE_ENV=production
-
-# 下载并安装 nodejs
-RUN   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash \      
-      && \. "$HOME/.nvm/nvm.sh" \
-      && nvm install ${NODE_VERSION} \
-      && npm install -g corepack pnpm vite \
-      && corepack enable \
-      && node -v  && which node \
-      && npm -v && which npm \
-      && pnpm -v && which pnpm
-
 
 # Install Bun (required for build scripts)
 #RUN GITHUB='https://gh-proxy.com/https://github.com' curl -fsSL https://bun.sh/install | bash
 RUN curl -fsSL https://bun.sh/install | bash
-
+ENV PATH="/root/.bun/bin:${PATH}"
+RUN corepack enable
 
 # install openclaw
 #RUN git clone https://gh-proxy.com/https://github.com/openclaw/openclaw.git /app
 RUN git clone -b v2026.3.2 https://github.com/openclaw/openclaw.git .
 
-#RUN chown -R node:node /app
+RUN chown -R node:node /app
 #RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile  --registry https://registry.npmmirror.com
-RUN  pnpm install --frozen-lockfile
+RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
 
 RUN pnpm build
 RUN pnpm ui:install
 RUN pnpm ui:build
+
 
 # Expose the CLI binary without requiring npm global writes as non-root.
 RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw && chmod 755 /app/openclaw.mjs 
