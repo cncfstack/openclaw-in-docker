@@ -70,9 +70,9 @@ RUN pnpm ui:build
 RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw && chmod 755 /app/openclaw.mjs 
 
 COPY scripts/openclaw-before.sh /usr/local/bin/openclaw-before.sh
-COPY scripts/openclaw-after.sh  /usr/local/bin/openclaw-after.sh
+COPY scripts/openclaw-autoapprove-devices.sh  /etc/init.d/openclaw-autoapprove-devices.sh
 COPY openclaw.service /usr/lib/systemd/system/openclaw.service
-RUN chmod +x /usr/local/bin/openclaw-before.sh /usr/local/bin/openclaw-after.sh \
+RUN chmod +x /usr/local/bin/openclaw-before.sh /etc/init.d/openclaw-autoapprove-devices.sh \
     && systemctl enable openclaw.service
 
 
