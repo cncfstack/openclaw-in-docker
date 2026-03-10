@@ -97,5 +97,6 @@ RUN case "$TARGETARCH" in \
         arm64) cp /tmp/openresty-arm64.sources /etc/apt/sources.list.d/openresty.sources ;; \
     esac && rm /tmp/openresty-*.sources \
     && wget -O - https://openresty.org/package/pubkey.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/openresty.gpg \
-    && cat /etc/apt/sources.list.d/openresty.sources \
+    && ls /tmp/ \
+    && ls /etc/apt/sources.list.d/ \
     && clean-install openresty
