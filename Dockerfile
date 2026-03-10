@@ -87,3 +87,14 @@ RUN DEBIAN_FRONTEND=noninteractive clean-install  xvfb && \
     node /app/node_modules/playwright-core/cli.js install --with-deps chromium && \
     chown -R node:node /home/node/.cache/ms-playwright
 #Xvfb :1 -screen 0 1280x800x24 -ac -nolisten tcp &
+
+
+# Install OpenResty
+# https://openresty.org/en/linux-packages.html#debian
+COPY apt.d/openresty-*.sources /tmp/
+RUN case "$TARGETARCH" in \
+        amd64) cp /tmp/openresty-amd64.sources /etc/apt/sources.list.d/openresty.sources ;; \
+        arm64) cp /tmp/openresty-arm64.sources /etc/apt/sources.list.d/openresty.sources ;; \
+    esac && rm /tmp/openresty-*.sources
+RUN wget -O - https://openresty.org/package/pubkey.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/openresty.gpg \
+    && clean-install openresty 

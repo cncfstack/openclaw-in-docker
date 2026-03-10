@@ -1,0 +1,5 @@
+Types: deb
+URIs: http://openresty.org/package/debian
+Suites: bookworm
+Components: openresty
+Signed-By: /etc/apt/trusted.gpg.d/openresty.gpg
