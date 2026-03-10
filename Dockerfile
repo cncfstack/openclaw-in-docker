@@ -1,4 +1,4 @@
-FROM docker.io/kicbase/stable:v0.0.50
+FROM registry.cncfstack.com/cncfstack/csvm:v0.1.0-bookworm-20260223
 
 LABEL org.opencontainers.image.base.name="registry.cnfstack.com/cncfstack/csvm:dev" \
   org.opencontainers.image.source="https://cncfstack.com" \
