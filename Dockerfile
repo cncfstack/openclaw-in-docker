@@ -92,10 +92,12 @@ RUN DEBIAN_FRONTEND=noninteractive clean-install  xvfb && \
 # Install OpenResty
 # https://openresty.org/en/linux-packages.html#debian
 COPY apt.d/openresty-*.sources /tmp/
+ARG TARGETARCH
 RUN case "$TARGETARCH" in \
         amd64) cp /tmp/openresty-amd64.sources /etc/apt/sources.list.d/openresty.sources ;; \
         arm64) cp /tmp/openresty-arm64.sources /etc/apt/sources.list.d/openresty.sources ;; \
     esac && rm /tmp/openresty-*.sources
+ARG TARGETARCH
 RUN echo $TARGETARCH \
     && ls /tmp/ \
     && ls /etc/apt/sources.list.d/
