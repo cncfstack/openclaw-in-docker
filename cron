@@ -1,2 +1,2 @@
 PATH=/root/.bun/bin:/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-@reboot /etc/init.d/openclaw-autoapprove-devices.sh > /var/log/openclaw-startup.log 2>&1
+@reboot /usr/local/bin/openclaw-autoapprove-devices.sh > /var/log/openclaw-startup.log 2>&1

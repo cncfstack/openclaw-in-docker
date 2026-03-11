@@ -47,7 +47,7 @@ RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw && chmod 755 /app/openclaw.
 
 COPY scripts/openclaw-before.sh /usr/local/bin/openclaw-before.sh
 COPY scripts/openclaw-autoapprove-devices.sh  /usr/local/bin/openclaw-autoapprove-devices.sh
-COPY openclaw.service /usr/lib/systemd/system/openclaw.service
+COPY systemd/openclaw.service /usr/lib/systemd/system/openclaw.service
 RUN chmod +x /usr/local/bin/openclaw-before.sh /usr/local/bin/openclaw-autoapprove-devices.sh \
     && systemctl enable openclaw.service
 
@@ -93,3 +93,5 @@ COPY login/nginx.conf /usr/local/openresty/nginx/conf/nginx.conf
 COPY login/password.lua /usr/local/openresty/site/lualib/password.lua
 COPY login/ratelimit.lua /usr/local/openresty/site/lualib/ratelimit.lua
 COPY login/users.lua /usr/local/openresty/site/lualib/users.lua
+COPY systemd/openresty.service /lib/systemd/system/openresty.service
+RUN systemctl enable openresty.service

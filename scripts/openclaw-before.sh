@@ -22,13 +22,13 @@ if [ ! -f "$CONFIG_FILE" ]; then
     "gateway": {
         "controlUi": {
             "allowedOrigins": [
-                ${OPENCLAW_WEB_URL:-"http://localhost"}
+                "${OPENCLAW_WEB_URL:-\"https://localhost\"}"
             ],
             "dangerouslyAllowHostHeaderOriginFallback": true,
             "allowInsecureAuth": true
         }
     }
-}'
+}
 EOF
     
     # 设置文件权限 (644 = rw-r--r--)
