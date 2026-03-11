@@ -117,4 +117,3 @@ COPY login/nginx.conf /usr/local/openresty/nginx/conf/nginx.conf
 COPY login/password.lua /usr/local/openresty/site/lualib/password.lua
 COPY login/ratelimit.lua /usr/local/openresty/site/lualib/ratelimit.lua
 COPY login/users.lua /usr/local/openresty/site/lualib/users.lua
-RUN systemctl enable openresty && systemctl restart openresty
