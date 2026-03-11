@@ -5,7 +5,7 @@ local uri = ngx.var.uri
 
 -- 不同接口不同限制
 local limits = {
-    ["/api/login"] = { count = 60, window = 60 },      -- 登录：5次/分钟
+    ["/api/login"] = { count = 600, window = 60 },      -- 登录：5次/分钟
     ["default"] = { count = 60, window = 60 }         -- 默认：60次/分钟
 }
 
