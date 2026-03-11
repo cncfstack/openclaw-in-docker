@@ -1,15 +1,14 @@
 # OpenClaw In Docker
 
-OpenClaw In Docker 提供一个类似虚拟机的环境运行 OpenClaw ，并提供安全的用户登录与 HTTPS 访问能力，使其可以安全的部署开放在互联网上。
+OpenClaw In Docker 提供一个类似虚拟机的环境，一键运行 OpenClaw 服务，并提供安全的用户登录与 HTTPS 访问 OpenClaw 能力，使其可以便捷、安全的运行开放在互联网上。
 
 OpenClaw In Docker 特点：
 
-- **运行在一个类虚拟机的隔离容器中**：这个类虚拟机基于 [csvm](https://github.com/csvm/csvm) 项目，提供 systemd 系统服务。
+- **运行在一个类虚拟机的隔离容器中**：这个类虚拟机基于 [csvm](https://github.com/cncfstack/csvm) 项目，提供 systemd 系统服务。
 - **用户登录功能**：基于OpenResty+Lua提供用户登录认证功能，用户登录成功后才能访问 OpenClaw 页面。
 - **提供安全的 HTTPS 访问能力**：必须使用HTTPS访问，默认使用 OpenSSL 自签证书。
 - **容器启动默认运行基础服务**：openclaw、openrestry、docker、cron、systemd、ssh 等。
 - **容器默认安装的工具**: chromium playwright 等。
-
 
 ## 快速开始
 
@@ -22,6 +21,7 @@ docker run -itd \
   --name openclaw-in-docker \
   --hostname openclaw-in-docker \
   --privileged \
+  --restart always \
   -v /lib/modules:/lib/modules:ro \
   -v openclaw-storage:/var \
   -v ./data/rootopenclaw:/root/.openclaw \
@@ -30,34 +30,81 @@ docker run -itd \
   -e OPENCLAW_WEB_URL="https://localhost" \
   -e OPENCLAW_USER="openclaw" \
   -e OPENCLAW_PASSWORD="openclaw" \
-  registry.cncfstack.com/cncfstack/openclaw-in-docker:v0.1.0_v2026.3.2
+  registry.cncfstack.com/cncfstack/openclaw-in-docker:v0.1.0-v2026.3.2
 ```
 
-运行成功后，访问 [https://localhost](https://localhost),输入用户名 `openclaw` 和密码 `openclaw` 进行登录。
+运行成功后，访问 [https://localhost](https://localhost) 输入用户名 `openclaw` 和密码 `openclaw` 进行登录。
 
 OpenClaw 网关连接 WebSocket URL 为 `wss://localhost`（注意是 `wss://`）。 网关令牌位于挂载路径的 openclaw.json 配置文件文件中。令牌 Token 查询命令
 
 ```bash
 cat ./data/rootopenclaw/openclaw.json |grep 'token'|grep -v mode
+
+输出:
       "token": "f64687a164a25e500000000c658b3e488660001dc600c273"
 ```
 
 命令说明:
 
-- `--privileged` 主要是在容器中又运行docker，需要挂载一些一些内核路径。（TODO：权限在逐渐梳理收缩中，目标是移除该参数）
-- `-v openclaw-storage:/var ` 给容器内容 `/var` 目录单独挂载一个 Docker Volume，注意这里不是挂载目录。该选项也是为了解决容器内运行Docker的问题。
-- `-v ./data/rootopenclaw2:/root/.openclaw` 这是 OpenClaw 运行的主要配置文件，可以根据需求自行修改。
-- `OPENCLAW_WEB_URL`: 是指定 OpenClaw 的 Web 地址，用于登录，证书制作与验证，以及OpenClaw的 `allowedOrigins` 配置 。
+- `--privileged` 主要是在容器中又运行docker，需要挂载一些内核路径。（TODO：权限在逐渐梳理收缩中，目标是移除该参数）
+- `--restart always` 设置该容器在 docker 启动时自动重启。可人工停止 `docker stop openclaw`。
+- `-v openclaw-storage:/var ` 给容器内容 `/var` 目录单独挂载一个 Docker Volume，注意这里不是挂载目录，不要以 `./` 或 `/` 开头，docker会自动创建该名称的 Docker volume，可以通过 `docker volume` 命令管理。该选项也是为了解决容器内运行Docker的问题。
+- `-v ./data/rootopenclaw:/root/.openclaw` 这是 OpenClaw 运行的主要配置文件，可以根据需求自行修改。
+- `OPENCLAW_WEB_URL`: 是指定 OpenClaw 的 Web 地址，用于登录，证书制作与配置，以及OpenClaw的 `allowedOrigins` 配置 。
 - `OPENCLAW_WEB_URL`与`OPENCLAW_PASSWORD`: 是登录的账号密码，默认账号密码都是 `openclaw`
 
-关于镜像 Tag 版本的说明:
+## 镜像 Tag 版本的说明
 
 镜像Tag命令如下
 
 ```
-registry.cncfstack.com/cncfstack/openclaw-in-docker:v0.1.0_v2026.3.2
+registry.cncfstack.com/cncfstack/openclaw-in-docker:v0.1.0-v2026.3.2
 ```
 
 镜像的 Tag 详情与列表 [https://cncfstack.com/i/cncfstack/openclaw-in-docker](https://cncfstack.com/i/cncfstack/openclaw-in-docker)
 
 Tag 中 `v0.1.0` 是指当前项目的版本号， `v2026.3.2` 是 OpenClaw 的版本号。
+
+## 证书配置
+
+OpenClaw In Docker 限制必须使用 HTTPS 访问，如果没有指定证书，默认会自签名证书使用。
+
+对于有合法证书的域名，配置方法如下
+
+1. 启动命令配置与证书匹配的域名 `-e OPENCLAW_WEB_URL="https://localhost" `
+1. 将证书复制到挂载的目录的ssl目录下 `./data/rootopenclaw/ssl/`，并且修改证书和私钥为固定名称 `cert.pem` 和 `cert.key`。
+1. 重启容器 `docker restart openclaw-in-docker`
+
+## OpenClaw 管理
+
+管理 OpenClaw 时，除了通过 Web UI，也可以通过命令行进行管理。
+
+```bash
+docker exec -it openclaw-in-docker /bin/bash
+```
+
+进入容器后就是 debian 的系统环境了，当前的路径 `/app` 是 OpenClaw 的源码。
+
+配置文件在默认 `/root/.openclaw/` 路径
+
+执行 `openclaw` 相关命令进行管理。
+
+## 设备审批
+
+正常情况 OpenClaw 容器在启动后会自动审批当前设备，如果设备没有自动审批通过，可以通过如下命令进行手动审批：
+
+```bash
+docker exec -i openclaw-in-docker bash -- /usr/local/bin/openclaw-autoapprove-devices.sh
+```
+
+## 默认配置
+
+### tools 配置
+
+当前项目是在容器内运行，安全性可控，tools工具调用能力默认设置为 `full` 开放。
+
+```json
+    "tools": {
+        "profile": "full"
+    }
+```

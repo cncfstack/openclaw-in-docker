@@ -10,7 +10,7 @@ WorkingDirectory=/app
 
 
 ExecStartPre=/usr/local/bin/openclaw-before.sh
-ExecStart=openclaw gateway --allow-unconfigured --bind lan
+ExecStart=openclaw gateway --allow-unconfigured
 
 # Restart policy
 Restart=always

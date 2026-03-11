@@ -1,4 +1,25 @@
 FROM registry.cncfstack.com/cncfstack/csvm:v0.1.0-bookworm-20260223
+# MIT License
+
+# Copyright (c) 2026 藏云阁
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
 LABEL org.opencontainers.image.base.name="registry.cnfstack.com/cncfstack/csvm:dev" \
   org.opencontainers.image.source="https://cncfstack.com" \
@@ -54,10 +75,10 @@ RUN chmod +x /usr/local/bin/openclaw-before.sh /usr/local/bin/openclaw-autoappro
 #  Cronjob, autoapprove
 # Cron在进行安装时，文件最后必须要有一个空行，否则会报错
 # new crontab file is missing newline before EOF, can't install.
-COPY cron /tmp/cron
-RUN echo "" >> /tmp/cron \
-    && crontab /tmp/cron \
-    && rm -f /tmp/cron
+COPY crontab/openclaw-autoapprove-devices /tmp/openclaw-autoapprove-devices
+RUN echo "" >> /tmp/openclaw-autoapprove-devices \
+    && crontab /tmp/openclaw-autoapprove-devices \
+    && rm -f /tmp/openclaw-autoapprove-devices
 
 # Install chromium
 RUN  DEBIAN_FRONTEND=noninteractive clean-install  chromium websockify  x11vnc novnc
