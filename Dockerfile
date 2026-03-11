@@ -95,10 +95,9 @@ COPY apt.d/openresty-*.sources /tmp/
 RUN case "$TARGETARCH" in \
         amd64) cp /tmp/openresty-amd64.sources /etc/apt/sources.list.d/openresty.sources ;; \
         arm64) cp /tmp/openresty-arm64.sources /etc/apt/sources.list.d/openresty.sources ;; \
-    esac && rm /tmp/openresty-*.sources 
+    esac && rm /tmp/openresty-*.sources
 RUN echo $TARGETARCH \
     && ls /tmp/ \
     && ls /etc/apt/sources.list.d/
-
-RUN wget -O - https://openresty.org/package/pubkey.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/openresty.gpg \
-    && clean-install openresty
+RUN wget -O - https://openresty.org/package/pubkey.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/openresty.gpg
+RUN clean-install openresty
