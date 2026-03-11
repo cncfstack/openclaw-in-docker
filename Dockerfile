@@ -76,8 +76,12 @@ RUN chmod +x /usr/local/bin/openclaw-before.sh /usr/local/bin/openclaw-autoappro
     && systemctl enable openclaw.service
 
 #  Cronjob, autoapprove
+# Cron在进行安装时，文件最后必须要有一个空行，否则会报错
+# new crontab file is missing newline before EOF, can't install.
 COPY cron /tmp/cron
-RUN crontab /tmp/cron && rm -f /tmp/cron
+RUN echo "" >> /tmp/cron \
+    && crontab /tmp/cron
+    && rm -f /tmp/cron
 
 # Install chromium
 RUN  DEBIAN_FRONTEND=noninteractive clean-install  chromium websockify  x11vnc novnc
@@ -100,10 +104,12 @@ RUN case "$TARGETARCH" in \
         arm64) cp /tmp/openresty-arm64.sources /etc/apt/sources.list.d/openresty.sources ;; \
     esac && rm /tmp/openresty-*.sources \
     && wget -O - https://openresty.org/package/pubkey.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/openresty.gpg \
-    && clean-install openresty openresty-opm luarocks \
-    && opm get openresty/lua-resty-string \
-    && opm get ledgetech/lua-resty-http \
-    && luarocks install bcrypt
+    && clean-install openresty 
+    
+# openresty-opm luarocks \
+# && opm get openresty/lua-resty-string \
+# && opm get ledgetech/lua-resty-http \
+# && luarocks install bcrypt
 
 # Config Login
 COPY login/login.html /usr/local/openresty/nginx/html/login.html
@@ -111,3 +117,4 @@ COPY login/nginx.conf /usr/local/openresty/nginx/conf/nginx.conf
 COPY login/password.lua /usr/local/openresty/site/lualib/password.lua
 COPY login/ratelimit.lua /usr/local/openresty/site/lualib/ratelimit.lua
 COPY login/users.lua /usr/local/openresty/site/lualib/users.lua
+RUN systemctl enable openresty && systemctl restart openresty
