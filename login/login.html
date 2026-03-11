@@ -128,6 +128,16 @@
             font-size: 13px;
             color: rgba(255, 255, 255, 0.4);
         }
+        
+        .error-box {
+            display: none;
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 15px;
+            color: #ff6b6b;
+        }
     </style>
 </head>
 <body>
@@ -136,8 +146,8 @@
         <div class="logo">OpenClaw</div>
         <div class="subtitle">您的 24/7 AI 智能雇员控制台</div>
         
-        <!-- 表单 action 对应你 Nginx 配置中的 /do-login -->
-        <form action="/do-login" method="POST">
+        <!-- 表单 -->
+        <form id="loginForm">
             <div class="form-group">
                 <label for="username">管理账号</label>
                 <input type="text" id="username" name="username" placeholder="输入用户名" required>
@@ -148,7 +158,11 @@
                 <input type="password" id="password" name="password" placeholder="••••••••" required>
             </div>
             
-            <button type="submit">立即接入</button>
+            <div id="errorBox" class="error-box">
+                <span id="errorText"></span>
+            </div>
+            
+            <button id="loginButton" type="submit">立即接入</button>
         </form>
 
         <div class="footer-links">
@@ -157,4 +171,63 @@
     </div>
 
 </body>
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const returnUrl = new URLSearchParams(window.location.search).get('return') || '/';
+        const errorBox = document.getElementById('errorBox');
+        const loginBtn = document.getElementById('loginButton');
+        
+        // 清除之前的错误信息
+        errorBox.style.display = 'none';
+        
+        // 显示加载状态
+        loginBtn.classList.add('loading');
+        loginBtn.disabled = true;
+        
+        try {
+            const formData = new URLSearchParams();
+            formData.append('username', username);
+            formData.append('password', password);
+            
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                // 登录成功，跳转
+                window.location.href = returnUrl;
+            } else {
+                // 显示错误
+                errorBox.style.display = 'flex';
+                document.getElementById('errorText').textContent = data.error || '登录失败';
+                
+                // 如果是封禁，禁用提交按钮
+                if (response.status === 403) {
+                    loginBtn.disabled = true;
+                    setTimeout(() => {
+                        loginBtn.disabled = false;
+                    }, 60000); // 1分钟后重试
+                }
+            }
+        } catch (err) {
+            errorBox.style.display = 'flex';
+            document.getElementById('errorText').textContent = '网络错误，请重试';
+        } finally {
+            loginBtn.classList.remove('loading');
+            if (!loginBtn.disabled) {
+                loginBtn.disabled = false;
+            }
+        }
+    });
+</script>
 </html>

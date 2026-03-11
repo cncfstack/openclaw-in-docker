@@ -70,11 +70,14 @@ RUN pnpm ui:build
 RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw && chmod 755 /app/openclaw.mjs 
 
 COPY scripts/openclaw-before.sh /usr/local/bin/openclaw-before.sh
-COPY scripts/openclaw-autoapprove-devices.sh  /etc/init.d/openclaw-autoapprove-devices.sh
+COPY scripts/openclaw-autoapprove-devices.sh  /usr/local/bin/openclaw-autoapprove-devices.sh
 COPY openclaw.service /usr/lib/systemd/system/openclaw.service
-RUN chmod +x /usr/local/bin/openclaw-before.sh /etc/init.d/openclaw-autoapprove-devices.sh \
+RUN chmod +x /usr/local/bin/openclaw-before.sh /usr/local/bin/openclaw-autoapprove-devices.sh \
     && systemctl enable openclaw.service
 
+#  Cronjob, autoapprove
+COPY cron /tmp/cron
+RUN crontab /tmp/cron && rm -f /tmp/cron
 
 # Install chromium
 RUN  DEBIAN_FRONTEND=noninteractive clean-install  chromium websockify  x11vnc novnc
@@ -88,7 +91,6 @@ RUN DEBIAN_FRONTEND=noninteractive clean-install  xvfb && \
     chown -R node:node /home/node/.cache/ms-playwright
 #Xvfb :1 -screen 0 1280x800x24 -ac -nolisten tcp &
 
-
 # Install OpenResty
 # https://openresty.org/en/linux-packages.html#debian
 COPY apt.d/openresty-*.sources /tmp/
@@ -96,10 +98,16 @@ ARG TARGETARCH
 RUN case "$TARGETARCH" in \
         amd64) cp /tmp/openresty-amd64.sources /etc/apt/sources.list.d/openresty.sources ;; \
         arm64) cp /tmp/openresty-arm64.sources /etc/apt/sources.list.d/openresty.sources ;; \
-    esac && rm /tmp/openresty-*.sources
-ARG TARGETARCH
-RUN echo $TARGETARCH \
-    && ls /tmp/ \
-    && ls /etc/apt/sources.list.d/
-RUN wget -O - https://openresty.org/package/pubkey.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/openresty.gpg
-RUN clean-install openresty
+    esac && rm /tmp/openresty-*.sources \
+    && wget -O - https://openresty.org/package/pubkey.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/openresty.gpg \
+    && clean-install openresty openresty-opm luarocks \
+    && opm get openresty/lua-resty-string \
+    && opm get ledgetech/lua-resty-http \
+    && luarocks install bcrypt
+
+# Config Login
+COPY login/login.html /usr/local/openresty/nginx/html/login.html
+COPY login/nginx.conf /usr/local/openresty/nginx/conf/nginx.conf
+COPY login/password.lua /usr/local/openresty/site/lualib/password.lua
+COPY login/ratelimit.lua /usr/local/openresty/site/lualib/ratelimit.lua
+COPY login/users.lua /usr/local/openresty/site/lualib/users.lua
