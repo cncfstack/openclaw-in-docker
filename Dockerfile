@@ -10,29 +10,6 @@ LABEL org.opencontainers.image.base.name="registry.cnfstack.com/cncfstack/csvm:d
 
 WORKDIR /app
 
-# Install some packages
-# Action:
-# 1. bun --> unzip
-RUN echo "Ensuring scripts are executable ..." \
-    && chmod +x /usr/local/bin/clean-install /usr/local/bin/entrypoint \
-    && echo "Installing Packages ..." \
-    && DEBIAN_FRONTEND=noninteractive clean-install \
-        systemd dbus \
-        conntrack iptables iproute2 ethtool socat util-linux mount ebtables udev kmod \
-        libseccomp2 pigz \
-        bash ca-certificates curl rsync \
-        nfs-common \
-        iputils-ping netcat-openbsd  \
-        openssl  wget telnet  gnupg hostname lsb-release   build-essential \
-        net-tools \
-        openssh-server tmux \
-        vim nano file unzip  less tree \
-        procps iotop iftop sysstat  htop gdb strace nmap  tcpdump traceroute dnsutils lsof \
-        git git-lfs \
-        jq python3 \
-        lz4 \
-        sudo
-
 # Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - 
 RUN clean-install nodejs \
