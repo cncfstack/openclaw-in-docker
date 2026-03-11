@@ -80,7 +80,7 @@ RUN chmod +x /usr/local/bin/openclaw-before.sh /usr/local/bin/openclaw-autoappro
 # new crontab file is missing newline before EOF, can't install.
 COPY cron /tmp/cron
 RUN echo "" >> /tmp/cron \
-    && crontab /tmp/cron
+    && crontab /tmp/cron \
     && rm -f /tmp/cron
 
 # Install chromium
