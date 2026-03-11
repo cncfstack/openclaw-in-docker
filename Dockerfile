@@ -81,11 +81,6 @@ RUN case "$TARGETARCH" in \
     esac && rm /tmp/openresty-*.sources \
     && wget -O - https://openresty.org/package/pubkey.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/openresty.gpg \
     && clean-install openresty 
-    
-# openresty-opm luarocks \
-# && opm get openresty/lua-resty-string \
-# && opm get ledgetech/lua-resty-http \
-# && luarocks install bcrypt
 
 # Config Login
 COPY login/login.html /usr/local/openresty/nginx/html/login.html
