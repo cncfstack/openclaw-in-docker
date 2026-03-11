@@ -12,8 +12,9 @@
 #
 [Unit]
 Description=The OpenResty Application Platform
-After=syslog.target network-online.target remote-fs.target nss-lookup.target openclaw.target
+After=syslog.target network-online.target remote-fs.target nss-lookup.target
 Wants=network-online.target
+Requires=openclaw.service
 
 [Service]
 Type=forking

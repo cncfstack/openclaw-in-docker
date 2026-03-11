@@ -91,7 +91,18 @@ docker exec -it openclaw-in-docker /bin/bash
 
 ## 设备审批
 
-正常情况 OpenClaw 容器在启动后会自动审批当前设备，如果设备没有自动审批通过，可以通过如下命令进行手动审批：
+正常情况 OpenClaw 容器在启动后会自动审批当前设备，如果设备没有自动审批通过
+
+```
+pairing required
+此设备需要网关主机的配对批准。
+openclaw devices list
+openclaw devices approve <requestId>
+在手机上？从桌面运行 openclaw dashboard --no-open 复制完整 URL（包括 #token=...）。
+Docs: Device pairing
+```
+
+可以通过如下命令进行手动审批：
 
 ```bash
 docker exec -i openclaw-in-docker bash -- /usr/local/bin/openclaw-autoapprove-devices.sh

@@ -10,12 +10,12 @@ docker run -itd \
   --privileged \
   -v /lib/modules:/lib/modules:ro \
   -v openclaw-storage:/var \
-  -v ./data/rootopenclaw4:/root/.openclaw \
+  -v ./data/rootopenclaw5:/root/.openclaw \
   -p 443:443 \
   --pull always \
   -e OPENCLAW_WEB_URL="https://localhost" \
   -e OPENCLAW_USER="openclaw" \
   -e OPENCLAW_PASSWORD="openclaw" \
-  registry.cncfstack.com/cncfstack/openclaw-in-docker:v0.1.0_v2026.3.2
+  registry.cncfstack.com/cncfstack/openclaw-in-docker:dev
 docker logs  openclaw-in-docker
 
