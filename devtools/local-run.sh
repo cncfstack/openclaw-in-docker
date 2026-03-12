@@ -1,6 +1,6 @@
 #!/bin/bash -x
 
-VER=$1
+VER=${1:-dev}
 cd ~
 docker stop openclaw-in-docker 
 docker rm openclaw-in-docker
