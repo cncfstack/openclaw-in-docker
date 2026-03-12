@@ -17,9 +17,9 @@ jobs:
     - name: Build the Docker image
       run: |
         # Create swapfile
-        dd if=/dev/zero of=/swapfile bs=1M count=2048
-        mkswap /swapfile
-        swapon /swapfile
+        sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+        sudo mkswap /swapfile
+        sudo swapon /swapfile
         free -g
 
         docker login  --username=${{ secrets.HARBOR_PUSH_USERNAME }} --password=${{ secrets.HARBOR_PUSH_PASSWORD }} harbor.cncfstack.com
