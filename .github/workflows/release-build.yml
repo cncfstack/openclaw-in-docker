@@ -3,9 +3,7 @@ name: Release Build
 on:
   push:
     tags:
-      - 'v0.1.0-v2026.3.8'
-      - 'v0.1.0-v2026.3.7'
-      - 'v0.1.0-v2026.3.2'
+      - 'v*'
 jobs:
 
   build:
@@ -27,4 +25,7 @@ jobs:
 
         docker login  --username=${{ secrets.HARBOR_PUSH_USERNAME }} --password=${{ secrets.HARBOR_PUSH_PASSWORD }} harbor.cncfstack.com
         docker buildx create --name mybuilder --use
-        docker buildx build --platform linux/amd64,linux/arm64 --push . --file Dockerfile --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:v0.1.0-v2026.3.2
+        for openclaw in v2026.3.8 v2026.3.7 v2026.3.2; do
+          sed -i "s/VERSION_TAG/${{ github.ref_name }}-${openclaw}/g" login/login.html
+          docker buildx build --platform linux/amd64,linux/arm64 --build-arg OPENCLAW_VERSION=${openclaw} --push . --file Dockerfile --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:${{ github.ref_name }}-${openclaw}
+        done
