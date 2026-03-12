@@ -1,4 +1,4 @@
-FROM registry.cncfstack.com/cncfstack/csvm:v0.1.0-bookworm-20260223
+FROM registry.cncfstack.com/cncfstack/csvm:v0.1.2-bookworm
 # MIT License
 
 # Copyright (c) 2026 藏云阁
@@ -35,7 +35,7 @@ ENV PATH="/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin
 
 # Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - 
-RUN clean-install nodejs \
+RUN DEBIAN_FRONTEND=noninteractive clean-install nodejs \
     && groupadd  node \
     && useradd  --gid node --shell /bin/bash --create-home node \
     && node --version \
@@ -61,7 +61,7 @@ RUN case "$TARGETARCH" in \
         arm64) cp /tmp/openresty-arm64.sources /etc/apt/sources.list.d/openresty.sources ;; \
     esac && rm /tmp/openresty-*.sources \
     && wget -O - https://openresty.org/package/pubkey.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/openresty.gpg \
-    && clean-install openresty
+    && DEBIAN_FRONTEND=noninteractive clean-install openresty
 # Config Login
 COPY login/login.html /usr/local/openresty/nginx/html/login.html
 COPY login/nginx.conf /usr/local/openresty/nginx/conf/nginx.conf

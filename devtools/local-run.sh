@@ -1,5 +1,6 @@
-#!/bin/bash
+#!/bin/bash -x
 
+VER=$1
 cd ~
 docker stop openclaw-in-docker 
 docker rm openclaw-in-docker
@@ -17,7 +18,7 @@ docker run -itd \
   -e OPENCLAW_WEB_URL="https://localhost" \
   -e OPENCLAW_USER="openclaw" \
   -e OPENCLAW_PASSWORD="openclaw" \
-  registry.cncfstack.com/cncfstack/openclaw-in-docker:dev
+  registry.cncfstack.com/cncfstack/openclaw-in-docker:${VER}
 sleep 3
 docker logs  openclaw-in-docker
 

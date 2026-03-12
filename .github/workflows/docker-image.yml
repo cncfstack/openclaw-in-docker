@@ -16,6 +16,12 @@ jobs:
     - uses: actions/checkout@v4
     - name: Build the Docker image
       run: |
+        # Create swapfile
+        dd if=/dev/zero of=/swapfile bs=1M count=2048
+        mkswap /swapfile
+        swapon /swapfile
+        free -g
+
         docker login  --username=${{ secrets.HARBOR_PUSH_USERNAME }} --password=${{ secrets.HARBOR_PUSH_PASSWORD }} harbor.cncfstack.com
         docker buildx create --name mybuilder --use
         docker buildx build --platform linux/amd64,linux/arm64 --push . --file Dockerfile --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:dev
