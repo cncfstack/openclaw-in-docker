@@ -14,11 +14,11 @@
 Description=The OpenResty Application Platform
 After=syslog.target network-online.target remote-fs.target nss-lookup.target
 Wants=network-online.target
-Requires=openclaw.service
 
 [Service]
 Type=forking
 PIDFile=/usr/local/openresty/nginx/logs/nginx.pid
+ExecStartPre=/usr/local/bin/openclaw-make-ssl.sh
 ExecStartPre=/usr/local/openresty/nginx/sbin/nginx -t -q -g 'daemon on; master_process on;'
 ExecStart=/usr/local/openresty/nginx/sbin/nginx -g 'daemon on; master_process on;'
 ExecStartPost=/bin/sleep 1
