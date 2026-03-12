@@ -26,11 +26,10 @@ docker run -itd \
   -v openclaw-storage:/var \
   -v ./data/rootopenclaw:/root/.openclaw \
   -p 443:443 \
-  -p 10022:22 \
   -e OPENCLAW_WEB_URL="https://localhost" \
   -e OPENCLAW_USER="openclaw" \
   -e OPENCLAW_PASSWORD="openclaw" \
-  registry.cncfstack.com/cncfstack/openclaw-in-docker:v0.1.0-v2026.3.2
+  registry.cncfstack.com/cncfstack/openclaw-in-docker:v0.1.0-v2026.3.8
 ```
 
 运行成功后，访问 [https://localhost](https://localhost) 输入用户名 `openclaw` 和密码 `openclaw` 进行登录。
@@ -58,7 +57,7 @@ cat ./data/rootopenclaw/openclaw.json |grep 'token'|grep -v mode
 镜像Tag命令如下
 
 ```
-registry.cncfstack.com/cncfstack/openclaw-in-docker:v0.1.0-v2026.3.2
+registry.cncfstack.com/cncfstack/openclaw-in-docker:v0.1.0-v2026.3.8
 ```
 
 镜像的 Tag 详情与列表 [https://cncfstack.com/i/cncfstack/openclaw-in-docker](https://cncfstack.com/i/cncfstack/openclaw-in-docker)
@@ -91,7 +90,9 @@ docker exec -it openclaw-in-docker /bin/bash
 
 ## 设备审批
 
-正常情况 OpenClaw 容器在启动后会自动审批当前设备，如果设备没有自动审批通过
+在输入 Token 连接网关后。
+
+为保障安全，新的浏览器或电脑等客户端在访问 OpenClaw 时会收到如下提示
 
 ```
 pairing required
@@ -102,7 +103,9 @@ openclaw devices approve <requestId>
 Docs: Device pairing
 ```
 
-可以通过如下命令进行手动审批：
+可以通过提示的命令进行审批（推荐）
+
+页可以通过如下命令进行手动审批，该脚本会审批所有的设备，请确保你的 OpenClaw 是被可信的人访问。
 
 ```bash
 docker exec -i openclaw-in-docker bash -- /usr/local/bin/openclaw-autoapprove-devices.sh
@@ -112,7 +115,7 @@ docker exec -i openclaw-in-docker bash -- /usr/local/bin/openclaw-autoapprove-de
 
 ### tools 配置
 
-当前项目是在容器内运行，安全性可控，tools工具调用能力默认设置为 `full` 开放。
+当前项目是在容器内运行，安全性可控，tools 工具调用能力默认设置为 `full` 开放。
 
 ```json
     "tools": {
