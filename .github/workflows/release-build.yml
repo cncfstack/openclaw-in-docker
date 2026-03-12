@@ -30,4 +30,4 @@ jobs:
 
         docker login  --username=${{ secrets.HARBOR_PUSH_USERNAME }} --password=${{ secrets.HARBOR_PUSH_PASSWORD }} harbor.cncfstack.com
         docker buildx create --name mybuilder --use
-        docker buildx build --platform linux/amd64,linux/arm64 --push . --file Dockerfile --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:v0.1.0-v2026.3.7
+        docker buildx build --platform linux/amd64,linux/arm64 --push . --file Dockerfile --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:v0.1.0-v2026.3.8
