@@ -17,7 +17,10 @@ jobs:
     - name: Build the Docker image
       run: |
         # Create swapfile
-        sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+        if [ -f /swapfile ]; then
+            sudo swapoff /swapfile 2>/dev/null || true
+        fi
+        sudo dd if=/dev/zero of=/swapfile bs=1M count=4096
         sudo mkswap /swapfile
         sudo swapon /swapfile
         free -g
