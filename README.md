@@ -22,14 +22,14 @@ docker run -itd \
   --hostname openclaw-in-docker \
   --privileged \
   --restart always \
+  -p 443:443 -p 80:80 \
   -v /lib/modules:/lib/modules:ro \
   -v openclaw-storage:/var \
-  -v ./data/rootopenclaw:/root/.openclaw \
-  -p 443:443 \
+  -v ./data/rootopenclaw1:/root/.openclaw \
   -e OPENCLAW_WEB_URL="https://localhost" \
   -e OPENCLAW_USER="openclaw" \
   -e OPENCLAW_PASSWORD="openclaw" \
-  registry.cncfstack.com/cncfstack/openclaw-in-docker:v0.1.0-v2026.3.8
+  registry.cncfstack.com/cncfstack/openclaw-in-docker:v2026.3.11-v0.1.0
 ```
 
 运行成功后，访问 [https://localhost](https://localhost) 输入用户名 `openclaw` 和密码 `openclaw` 进行登录。
@@ -57,12 +57,12 @@ cat ./data/rootopenclaw/openclaw.json |grep 'token'|grep -v mode
 镜像Tag命令如下
 
 ```
-registry.cncfstack.com/cncfstack/openclaw-in-docker:v0.1.0-v2026.3.8
+registry.cncfstack.com/cncfstack/openclaw-in-docker:v2026.3.11-v0.1.0
 ```
 
 镜像的 Tag 详情与列表 [https://cncfstack.com/i/cncfstack/openclaw-in-docker](https://cncfstack.com/i/cncfstack/openclaw-in-docker)
 
-Tag 中 `v0.1.0` 是指当前项目的版本号， `v2026.3.2` 是 OpenClaw 的版本号。
+Tag 中  `v2026.3.11` 是 OpenClaw 的版本号，`v0.1.0` 是指当前项目（OpenClaw-In-Docker）的版本号。
 
 ## 证书配置
 
@@ -113,7 +113,7 @@ docker exec -i openclaw-in-docker bash -- /usr/local/bin/openclaw-autoapprove-de
 
 ## 默认配置
 
-### tools 配置
+**tools 配置**
 
 当前项目是在容器内运行，安全性可控，tools 工具调用能力默认设置为 `full` 开放。
 
@@ -121,4 +121,17 @@ docker exec -i openclaw-in-docker bash -- /usr/local/bin/openclaw-autoapprove-de
     "tools": {
         "profile": "full"
     }
+```
+
+
+## 版本升级
+
+版本升级之需要使用新版本镜像启动即可。
+
+升级步骤：
+
+```bash
+docker stop openclaw-in-docker
+docker rm openclaw-in-docker
+docker run -itd \ ## 上文的运行命令，将镜像tag更新为新版本即可
 ```
