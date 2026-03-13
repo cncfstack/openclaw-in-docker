@@ -172,14 +172,21 @@
 
 </body>
 <script>
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    // 获取全局元素
+    const loginForm = document.getElementById('loginForm');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const loginBtn = document.getElementById('loginButton');
+    const errorBox = document.getElementById('errorBox');
+    const errorText = document.getElementById('errorText');
+    
+    // 表单提交处理
+    loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
+        const username = usernameInput.value;
+        const password = passwordInput.value;
         const returnUrl = new URLSearchParams(window.location.search).get('return') || '/';
-        const errorBox = document.getElementById('errorBox');
-        const loginBtn = document.getElementById('loginButton');
         
         // 清除之前的错误信息
         errorBox.style.display = 'none';
@@ -209,25 +216,38 @@
             } else {
                 // 显示错误
                 errorBox.style.display = 'flex';
-                document.getElementById('errorText').textContent = data.error || '登录失败';
+                errorText.textContent = data.error || '登录失败';
                 
-                // 如果是封禁，禁用提交按钮
+                // 如果是封禁，禁用提交按钮并设置解锁计时器
                 if (response.status === 403) {
-                    loginBtn.disabled = true;
-                    setTimeout(() => {
+                    // 保存定时器ID以便后续清除
+                    if (loginBtn.lockoutTimer) clearTimeout(loginBtn.lockoutTimer);
+                    loginBtn.lockoutTimer = setTimeout(() => {
                         loginBtn.disabled = false;
-                    }, 60000); // 1分钟后重试
+                    }, 60000);
                 }
             }
         } catch (err) {
             errorBox.style.display = 'flex';
-            document.getElementById('errorText').textContent = '网络错误，请重试';
+            errorText.textContent = '网络错误，请重试';
         } finally {
             loginBtn.classList.remove('loading');
-            if (!loginBtn.disabled) {
+            if (!loginBtn.disabled && !loginBtn.lockoutTimer) {
                 loginBtn.disabled = false;
             }
         }
     });
+    
+    // 输入内容变化时自动解锁
+    const resetLockout = () => {
+        if (loginBtn.lockoutTimer) {
+            clearTimeout(loginBtn.lockoutTimer);
+            loginBtn.lockoutTimer = null;
+        }
+        loginBtn.disabled = false;
+    };
+    
+    usernameInput.addEventListener('input', resetLockout);
+    passwordInput.addEventListener('input', resetLockout);
 </script>
 </html>

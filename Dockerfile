@@ -83,8 +83,8 @@ RUN echo "" >> /tmp/openclaw-autoapprove-devices \
 
 ################################################
 # 前面的Dockerfile尽量不同，在构建时尽量使用缓存
-ARG OPENCLAW_VERSION
-ENV OPENCLAW_VERSION=v2026.3.2
+ARG OPENCLAW_VERSION=2026.3.11
+ENV OPENCLAW_VERSION=${OPENCLAW_VERSION}
 
 # install openclaw
 #RUN git clone https://gh-proxy.com/https://github.com/openclaw/openclaw.git /app
