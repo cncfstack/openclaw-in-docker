@@ -25,7 +25,7 @@ docker run -itd \
   -p 443:443 -p 80:80 \
   -v /lib/modules:/lib/modules:ro \
   -v openclaw-storage:/var \
-  -v ./data/rootopenclaw1:/root/.openclaw \
+  -v ./data/openclaw01:/root/.openclaw \
   -e OPENCLAW_WEB_URL="https://localhost" \
   -e OPENCLAW_USER="openclaw" \
   -e OPENCLAW_PASSWORD="openclaw" \
