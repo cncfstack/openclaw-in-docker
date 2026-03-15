@@ -83,7 +83,7 @@ RUN echo "" >> /tmp/openclaw-autoapprove-devices \
 
 ################################################
 # 前面的Dockerfile尽量不同，在构建时尽量使用缓存
-ARG OPENCLAW_VERSION=2026.3.11
+ARG OPENCLAW_VERSION=2026.3.13
 ENV OPENCLAW_VERSION=${OPENCLAW_VERSION}
 
 # install openclaw

@@ -135,3 +135,35 @@ docker stop openclaw-in-docker
 docker rm openclaw-in-docker
 docker run -itd \ ## 上文的运行命令，将镜像tag更新为新版本即可
 ```
+
+## FAQ
+
+### origin not allowed
+
+**问题错误信息如下：**
+
+```bash
+origin not allowed (open the Control UI from the gateway host or allow it in gateway.controlUi.allowedOrigins)
+```
+
+**问题原因：**
+
+在执行 `docker run` 命令时，运行的端口和浏览器的端口不一致。
+
+```bash
+  -p 10443:443 -p 10080:80 \
+  -e OPENCLAW_WEB_URL="https://localhost:10443" \
+```
+
+这会自动调整 openclaw.json 的配置
+
+```json
+  "gateway": {
+    "controlUi": {
+      "allowedOrigins": [
+        "https://localhost:10443"
+      ]
+    },
+```
+
+然后等待30秒左右，刷新页面 `https://localhost:10443`。或者重启openclaw或容器
