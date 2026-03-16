@@ -29,7 +29,7 @@ docker run -itd \
   -e OPENCLAW_WEB_URL="https://localhost" \
   -e OPENCLAW_USER="openclaw" \
   -e OPENCLAW_PASSWORD="openclaw" \
-  registry.cncfstack.com/cncfstack/openclaw-in-docker:v2026.3.11-v0.1.0
+  registry.cncfstack.com/cncfstack/openclaw-in-docker:v2026.3.13-1-v0.1.2
 ```
 
 运行成功后，访问 [https://localhost](https://localhost) 输入用户名 `openclaw` 和密码 `openclaw` 进行登录。
@@ -57,12 +57,12 @@ cat ./data/rootopenclaw/openclaw.json |grep 'token'|grep -v mode
 镜像Tag命令如下
 
 ```
-registry.cncfstack.com/cncfstack/openclaw-in-docker:v2026.3.11-v0.1.0
+registry.cncfstack.com/cncfstack/openclaw-in-docker:v2026.3.13-1-v0.1.2
 ```
 
 镜像的 Tag 详情与列表 [https://cncfstack.com/i/cncfstack/openclaw-in-docker](https://cncfstack.com/i/cncfstack/openclaw-in-docker)
 
-Tag 中  `v2026.3.11` 是 OpenClaw 的版本号，`v0.1.0` 是指当前项目（OpenClaw-In-Docker）的版本号。
+Tag 中  `v2026.3.13-1` 是 OpenClaw 的版本号，`v0.1.2` 是指当前项目（OpenClaw-In-Docker）的版本号。
 
 ## 证书配置
 
