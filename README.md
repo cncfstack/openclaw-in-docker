@@ -12,7 +12,10 @@ OpenClaw In Docker 特点：
 
 ## 快速开始
 
+搭建OpenClaw只需要3步： 1.运行OpenClaw、2.获取令牌Token，以及3.设备审批。
+
 ### 1. 运行OpenClaw
+
 在运行 OpenClaw 之前，请确保已经安装 Docker。国内用户可参考 [Docker资源库-部署升级](https://cncfstack.com/p/docker/docs/300.%E9%83%A8%E7%BD%B2%E5%8D%87%E7%BA%A7/) 安装Docker。
 
 运行如下命令，拉取 OpenClaw 镜像并启动容器：
@@ -26,7 +29,7 @@ docker run -itd \
   -p 443:443 -p 80:80 \
   -v /lib/modules:/lib/modules:ro \
   -v openclaw-storage:/var \
-  -v ./data/openclaw01:/root/.openclaw \
+  -v ./data/openclaw:/root/.openclaw \
   -e OPENCLAW_WEB_URL="https://localhost" \
   -e OPENCLAW_USER="openclaw" \
   -e OPENCLAW_PASSWORD="openclaw" \
@@ -35,21 +38,14 @@ docker run -itd \
 
 运行成功后，访问 [https://localhost](https://localhost) 输入用户名 `openclaw` 和密码 `openclaw` 进行登录。
 
-OpenClaw 网关连接 WebSocket URL 为 `wss://localhost`（注意是 `wss://`）。 网关令牌位于挂载路径的 openclaw.json 配置文件文件中。令牌 Token 查询命令
-
-```bash
-cat ./data/rootopenclaw/openclaw.json |grep 'token'|grep -v mode
-
-输出:
-      "token": "f64687a164a25e5000xxxxxxxx58b3e488660001dc600c273"
-```
+OpenClaw 网关连接 WebSocket URL 为 `wss://localhost`（注意是 `wss://`）。 
 
 命令说明:
 
 - `--privileged` 主要是在容器中又运行docker，需要挂载一些内核路径。（TODO：权限在逐渐梳理收缩中，目标是移除该参数）
 - `--restart always` 设置该容器在 docker 启动时自动重启。可人工停止 `docker stop openclaw`。
 - `-v openclaw-storage:/var ` 给容器内容 `/var` 目录单独挂载一个 Docker Volume，注意这里不是挂载目录，不要以 `./` 或 `/` 开头，docker会自动创建该名称的 Docker volume，可以通过 `docker volume` 命令管理。该选项也是为了解决容器内运行Docker的问题。
-- `-v ./data/rootopenclaw:/root/.openclaw` 这是 OpenClaw 运行的主要配置文件，可以根据需求自行修改。
+- `-v ./data/openclaw:/root/.openclaw` 这是 OpenClaw 运行的主要配置文件，可以根据需求自行修改。
 - `OPENCLAW_WEB_URL`: 是指定 OpenClaw 的 Web 地址，用于登录，证书制作与配置，以及OpenClaw的 `allowedOrigins` 配置 。
 - `OPENCLAW_WEB_URL`与`OPENCLAW_PASSWORD`: 是登录的账号密码，默认账号密码都是 `openclaw`
 
@@ -63,13 +59,24 @@ OpenClaw 默认启动时会自动生成一个网关连接的Token，存在 OpenC
 docker exec -i openclaw-in-docker cat /root/.openclaw/openclaw.json |grep token|grep -v mode
 ```
 
-## 3. 设备审批
+或者
 
-在输入 Token 连接网关后。
+```bash
+cat ./data/openclaw/openclaw.json |grep 'token'|grep -v mode
+```
 
-为保障安全，新的浏览器或电脑等客户端在访问 OpenClaw 时会收到如下提示
+
+输出参考:
 
 ```
+      "token": "f64687a164a25e5000xxxxxxxx58b3e488660001dc600c273"
+```
+
+## 3. 设备审批
+
+在输入 Token 连接网关后。为保障安全，新的浏览器或电脑等客户端在访问 OpenClaw 时会收到如下提示
+
+```bash
 pairing required
 此设备需要网关主机的配对批准。
 openclaw devices list
@@ -80,11 +87,12 @@ Docs: Device pairing
 
 可以通过提示的命令进行审批（推荐）
 
-页可以通过如下命令进行手动审批，该脚本会审批所有的设备，请确保你的 OpenClaw 是被可信的人访问。
+也可以通过如下命令进行手动审批，该脚本会审批所有的设备，请确保你的 OpenClaw 是被可信的人访问。
 
 ```bash
 docker exec -i openclaw-in-docker bash -- /usr/local/bin/openclaw-autoapprove-devices.sh
 ```
+
 
 ## OpenClaw 管理
 
@@ -107,7 +115,7 @@ OpenClaw In Docker 限制必须使用 HTTPS 访问，如果没有指定证书，
 对于有合法证书的域名，配置方法如下
 
 1. 启动命令配置与证书匹配的域名 `-e OPENCLAW_WEB_URL="https://localhost" `
-1. 将证书复制到挂载的目录的ssl目录下 `./data/rootopenclaw/ssl/`，并且修改证书和私钥为固定名称 `cert.pem` 和 `cert.key`。
+1. 将证书复制到挂载的目录的ssl目录下 `./data/openclaw/ssl/`，并且修改证书和私钥为固定名称 `cert.pem` 和 `cert.key`。
 1. 重启容器 `docker restart openclaw-in-docker`
 
 ### OpenClaw命令

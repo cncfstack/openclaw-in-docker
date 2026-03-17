@@ -53,15 +53,6 @@ while true; do
             fi
         done <<< "$(echo "$REQUEST_IDS")"
     fi
-
-    # 等待10秒后再次检查
-    echo "等待10秒后重新检查..."
-    sleep 10
-    
-    # 显示当前设备状态
-    echo -e "\n当前设备列表:"
-    openclaw devices list
-    echo -e "---\n"
 done
 
 echo "所有设备配对请求已处理完成。" > /tmp/openclaw-autoapprove-devices.log
