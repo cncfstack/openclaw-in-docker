@@ -1,4 +1,4 @@
-FROM registry.cncfstack.com/cncfstack/csvm:v0.1.2-bookworm
+FROM registry.cncfstack.com/cncfstack/csvm:v0.1.3-bookworm
 # MIT License
 
 # Copyright (c) 2026 藏云阁
@@ -88,7 +88,8 @@ ENV OPENCLAW_VERSION=${OPENCLAW_VERSION}
 
 # install openclaw
 #RUN git clone https://gh-proxy.com/https://github.com/openclaw/openclaw.git /app
-RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git .
+RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git . \
+    && rm -rf /app/.git
 
 RUN chown -R node:node /app
 #RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile  --registry https://registry.npmmirror.com
@@ -97,14 +98,12 @@ RUN pnpm build
 RUN pnpm ui:install
 RUN pnpm ui:build
 
-# Expose the CLI binary without requiring npm global writes as non-root.
-RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw \
-    && chmod 755 /app/openclaw.mjs 
-
 COPY scripts/openclaw-before.sh /usr/local/bin/openclaw-before.sh
 COPY scripts/openclaw-autoapprove-devices.sh  /usr/local/bin/openclaw-autoapprove-devices.sh
 COPY systemd/openclaw.service /usr/lib/systemd/system/openclaw.service
 RUN chmod +x /usr/local/bin/openclaw-before.sh /usr/local/bin/openclaw-autoapprove-devices.sh \
+    && ln -sf /app/openclaw.mjs /usr/local/bin/openclaw \
+    && chmod 755 /app/openclaw.mjs \
     && systemctl enable openclaw.service
 
 # Install playwright
@@ -115,3 +114,6 @@ RUN DEBIAN_FRONTEND=noninteractive clean-install  xvfb && \
     PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright \
     node /app/node_modules/playwright-core/cli.js install --with-deps chromium && \
     chown -R node:node /home/node/.cache/ms-playwright
+
+# 默认exec登录时的目录
+WORKDIR /root

@@ -1,0 +1,169 @@
+# 工作流的名称，会在 GitHub Actions 的界面上显示
+name: 镜像构建
+
+# 定义了触发此工作流运行的事件
+on:
+  # 1. workflow_dispatch: 允许用户通过 GitHub 的“Actions”选项卡手动触发工作流
+  workflow_dispatch:
+    # 定义手动触发时可以输入的参数
+    inputs:
+      # 参数名称: openclaw_version
+      openclaw_version:
+        description: '请输入 OpenClaw 版本进行 Build (branch/tag)' # 参数的描述文本
+        required: false          # 是否为必填项，这里设置为 false，表示可以不填
+        default: 'main'          # 默认值，如果不填，则使用 'main'
+        type: string             # 参数类型为字符串
+      # 参数名称: push_image
+      push_image:
+        description: 'Push image to registry' # 描述
+        required: false          # 非必填
+        default: true            # 默认值为 true，即默认会推送镜像
+        type: boolean            # 参数类型为布尔值
+
+  # 2. push: 当代码被推送到特定分支时触发
+  push:
+    branches:
+      - main      # 当推送到 main 分支时触发
+      - dev       # 当推送到 dev 分支时触发
+
+  # 3. schedule: 定时任务触发
+  schedule:
+    # 每天 UTC 时间 00:00 运行一次
+    # 目的：定期获取 OpenClaw 项目的最新更新并构建镜像
+    - cron: '0 0 * * *'
+
+# 定义工作流级别的环境变量，在后续的 job 和 step 中都可以使用
+env:
+  REGISTRY: harbor.cncfstack.com        # 镜像仓库地址
+  IMAGE_NAME: cncfstack/openclaw-in-docker # 镜像名称（不包括仓库地址）
+
+# 定义要执行的任务（jobs），这里只有一个名为 'build' 的任务
+jobs:
+  build:
+    # 指定任务运行在最新版的 Ubuntu 虚拟机环境上
+    runs-on: ubuntu-latest
+
+    # 为当前 job 授予的权限
+    permissions:
+      contents: read   # 允许读取仓库代码
+      packages: write  # 允许写入 GitHub Packages（如果需要推送到 GHCR 的话，这里虽然用的是 Harbor，但保留权限也无妨）
+
+    # 定义 job 的执行步骤，按顺序运行
+    steps:
+      # 步骤 1: 检出当前仓库的代码
+      - name: Checkout repository
+        uses: actions/checkout@v4  # 使用 actions/checkout 这个官方 action 的 v4 版本
+
+      # 步骤 2: 设置 Docker Buildx
+      # Buildx 是 Docker CLI 的一个插件，支持多平台构建、高级缓存等特性
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 步骤 3: 登录到容器镜像仓库
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3  # 使用 Docker 官方的登录 action
+        with:
+          registry: ${{ env.REGISTRY }}           # 从环境变量获取仓库地址
+          username: ${{ secrets.HARBOR_PUSH_USERNAME }} # 从 GitHub Secrets 获取用户名
+          password: ${{ secrets.HARBOR_PUSH_PASSWORD }} # 从 GitHub Secrets 获取密码
+
+      # 步骤 4: 提取 Docker 镜像的元数据（标签、标签等）
+      - name: Extract metadata
+        id: meta  # 给这个步骤定义一个 ID，后续步骤可以通过 steps.meta.outputs 引用它的输出
+        uses: docker/metadata-action@v5
+        with:
+          # 要生成元数据的完整镜像名称（仓库地址/镜像名）
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # 定义生成哪些标签 (tags)
+          tags: |
+            # 1. 如果是在默认分支（main）上触发，则生成一个 latest 标签
+            type=raw,value=latest,enable={{is_default_branch}}
+            # 2. 基于 Git commit SHA 生成标签，格式为 <分支名>-<短 SHA>，例如 main-a1b2c3d
+            #type=sha,prefix={{branch}}-
+            # 3. 基于触发事件的分支或标签名生成标签，例如 main, dev, v1.0
+            #type=ref,event=branch
+
+            # 4. 如果是定时任务触发，则生成一个基于日期的标签，例如 20231027
+            # 构建为latest
+            #type=schedule,value=latest
+
+            # 5. 基于标签生成标签，例如 v1.0.0-prod
+            type=ref,event=tag,suffix=-{{VERSION}}
+
+
+
+      # 步骤 5: 确定要构建的 OpenClaw 版本
+      - name: Determine OpenClaw version
+        id: version  # 定义步骤 ID，以便后续引用
+        # 这是一个 Shell 脚本
+        run: |
+          # 判断触发事件是否为 workflow_dispatch（手动触发）
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # 如果是，则使用用户在输入框中填写的版本
+            VERSION="${{ inputs.openclaw_version }}"
+          else
+            # 如果不是（例如 push 或 schedule 触发），则从文件 .last-openclaw-version 中读取版本
+            # 这个文件通常由其他流程维护，记录了上次构建的 OpenClaw 版本
+            VERSION=$(cat .last-openclaw-version)
+          fi
+          # 将 VERSION 变量的值输出到 GITHUB_OUTPUT 环境变量文件中
+          # 这样后续步骤就可以通过 ${{ steps.version.outputs.openclaw_version }} 来获取这个值
+          echo "openclaw_version=${VERSION}" >> $GITHUB_OUTPUT
+          # 同时在日志中打印一下，方便查看
+          echo "Building with OpenClaw version: ${VERSION}"
+
+      # 步骤 6: 构建并推送 Docker 镜像（核心步骤）
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5  # 使用 Docker 官方的 build-push action
+        with:
+          context: .                       # 构建上下文为当前目录
+          file: ./Dockerfile              # 指定 Dockerfile 的路径
+          # 决定是否推送镜像到仓库
+          # 逻辑: 如果不是手动触发 (workflow_dispatch)，则总是推送。
+          #       如果是手动触发，则根据用户输入的 push_image 布尔值来决定是否推送。
+          push: ${{ (github.event_name != 'workflow_dispatch') || inputs.push_image }}
+          # 要打的标签，从步骤 4 (id=meta) 的输出中获取
+          tags: ${{ steps.meta.outputs.tags }}
+          # 要打的标签（labels），从步骤 4 (id=meta) 的输出中获取
+          labels: ${{ steps.meta.outputs.labels }}
+          # 构建参数，传递给 Dockerfile 的 ARG 指令
+          build-args: |
+            # 将步骤 5 确定的 OpenClaw 版本传递给 Dockerfile 中的 OPENCLAW_VERSION 构建参数
+            OPENCLAW_VERSION=${{ steps.version.outputs.openclaw_version }}
+          # 设置缓存源，使用 GitHub Actions 内置的缓存 (gha)
+          cache-from: type=gha
+          # 设置缓存目标，mode=max 表示尽可能多地缓存构建层
+          cache-to: type=gha,mode=max
+          # 构建的目标平台：Linux on amd64 (x86_64) 和 Linux on arm64
+          # 这是 Buildx 的特性，可以构建多架构的镜像清单
+          platforms: linux/amd64,linux/arm64
+
+      # 步骤 7: 生成构建摘要，在 GitHub Actions 运行报告的“Steps”部分显示一个美观的总结
+      - name: Generate build summary
+        # 这是一个 Shell 脚本，内容是将 Markdown 格式的文本写入到 GITHUB_STEP_SUMMARY 文件中
+        run: |
+          # 添加一个标题 (H3 级别)
+          echo "### 🦞 OpenClaw Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          # 显示构建的 OpenClaw 版本
+          echo "**OpenClaw Version:** \`${{ steps.version.outputs.openclaw_version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          # 显示生成的镜像标签
+          echo "**Image Tags:**" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          # 显示目标仓库
+          echo "**Registry:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          # 根据触发条件，在总结中说明镜像是否被推送
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ inputs.push_image }}" = "true" ]; then
+              echo "✅ Image pushed to registry" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "ℹ️ Image built but not pushed (manual trigger with push disabled)" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "✅ Image pushed to registry" >> $GITHUB_STEP_SUMMARY
+          fi
