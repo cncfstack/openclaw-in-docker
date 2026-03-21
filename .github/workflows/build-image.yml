@@ -67,30 +67,6 @@ jobs:
           username: ${{ secrets.HARBOR_PUSH_USERNAME }} # 从 GitHub Secrets 获取用户名
           password: ${{ secrets.HARBOR_PUSH_PASSWORD }} # 从 GitHub Secrets 获取密码
 
-      # 步骤 4: 提取 Docker 镜像的元数据（标签、标签等）
-      - name: Extract metadata
-        id: meta  # 给这个步骤定义一个 ID，后续步骤可以通过 steps.meta.outputs 引用它的输出
-        uses: docker/metadata-action@v5
-        with:
-          # 要生成元数据的完整镜像名称（仓库地址/镜像名）
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          # 定义生成哪些标签 (tags)
-          tags: |
-            # 1. 如果是在默认分支（main）上触发，则生成一个 latest 标签
-            type=raw,value=latest,enable={{is_default_branch}}
-            # 2. 基于 Git commit SHA 生成标签，格式为 <分支名>-<短 SHA>，例如 main-a1b2c3d
-            #type=sha,prefix={{branch}}-
-            # 3. 基于触发事件的分支或标签名生成标签，例如 main, dev, v1.0
-            #type=ref,event=branch
-
-            # 4. 如果是定时任务触发，则生成一个基于日期的标签，例如 20231027
-            # 构建为latest
-            #type=schedule,value=latest
-
-            # 5. 基于标签生成标签，例如 v1.0.0-prod
-            type=ref,event=tag,suffix=-{{VERSION}}
-
-
 
       # 步骤 5: 确定要构建的 OpenClaw 版本
       - name: Determine OpenClaw version
@@ -111,6 +87,24 @@ jobs:
           echo "openclaw_version=${VERSION}" >> $GITHUB_OUTPUT
           # 同时在日志中打印一下，方便查看
           echo "Building with OpenClaw version: ${VERSION}"
+
+      # 步骤 4: 提取 Docker 镜像的元数据（标签、标签等）
+      - name: Extract metadata
+        id: meta  # 给这个步骤定义一个 ID，后续步骤可以通过 steps.meta.outputs 引用它的输出
+        uses: docker/metadata-action@v5
+        with:
+          # 要生成元数据的完整镜像名称（仓库地址/镜像名）
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # 定义生成哪些标签 (tags)
+          tags: |
+            # 1. 如果是在默认分支（main）上触发，则生成一个 latest 标签
+            type=raw,value=latest,enable={{is_default_branch}}
+            # 4. 如果是定时任务触发，则生成一个基于日期的标签，例如 20231027
+            #type=schedule,value=latest
+
+            # 5. 基于标签生成标签，例如 v1.0.0-prod
+            type=ref,event=tag,suffix=-${{ steps.version.outputs.openclaw_version }}
+
 
       # 步骤 6: 构建并推送 Docker 镜像（核心步骤）
       - name: Build and push Docker image
