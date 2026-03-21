@@ -23,7 +23,7 @@ jobs:
         run: |
           # Get the latest release from OpenClaw repository
           LATEST_TAG=$(curl -s https://api.github.com/repos/openclaw/openclaw/releases/latest | jq -r '.tag_name // empty')
-          LATEST_COMMIT=$(curl -s https://api.github.com/repos/openclaw/openclaw/commits/main | jq -r '.sha[:7]')
+          LATEST_COMMIT=$(curl -s https://api.github.com/repos/openclaw/openclaw/commits/main | jq -r '.sha')
 
           echo "Latest OpenClaw version: ${LATEST_TAG} , latest commit ${LATEST_COMMIT}"
           echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
