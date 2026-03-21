@@ -58,9 +58,16 @@ EOF
     echo "配置文件创建成功"
 else
     echo "配置文件已存在: $CONFIG_FILE"
-    # 可选：显示文件内容的前几行用于验证
-    echo "当前配置文件内容预览:"
-    head -5 "$CONFIG_FILE"
+    # 如果文件已经存在了，在更新域名后需要重新设置域名，在 allowedOrigins 后面新添加一行,需要先判断这条是否存在，如果存在就跳过，不存在就添加
+    if grep -q "${OPENCLAW_WEB_URL}" "$CONFIG_FILE"; then
+        echo "配置项文件已存在，无需更新"
+    else
+        echo "配置文件已存在，但是新域名不存在，更新域名"
+        # 使用 jq 命令更新 allowedOrigins 数组
+        jq ".gateway.controlUi.allowedOrigins += [\"${OPENCLAW_WEB_URL}\"]" "$CONFIG_FILE" > temp.json
+        mv temp.json "$CONFIG_FILE"
+        echo "域名更新成功"
+    fi
 fi
 
 # 验证配置文件是否可读

@@ -1,4 +1,4 @@
-FROM registry.cncfstack.com/cncfstack/csvm:v0.1.3-bookworm
+FROM registry.cncfstack.com/cncfstack/csvm:v0.2.0-bookworm
 # MIT License
 
 # Copyright (c) 2026 藏云阁
@@ -69,6 +69,7 @@ COPY login/password.lua /usr/local/openresty/site/lualib/password.lua
 COPY login/ratelimit.lua /usr/local/openresty/site/lualib/ratelimit.lua
 COPY login/users.lua /usr/local/openresty/site/lualib/users.lua
 COPY scripts/openclaw-make-ssl.sh /usr/local/bin/openclaw-make-ssl.sh
+COPY run_onboot/update_user.sh /scripts/scripts.d/update_user.sh
 COPY systemd/openresty.service /lib/systemd/system/openresty.service
 RUN chmod +x /usr/local/bin/openclaw-make-ssl.sh \
     && systemctl enable openresty.service
