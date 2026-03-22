@@ -69,7 +69,7 @@ COPY login/password.lua /usr/local/openresty/site/lualib/password.lua
 COPY login/ratelimit.lua /usr/local/openresty/site/lualib/ratelimit.lua
 COPY login/users.lua /usr/local/openresty/site/lualib/users.lua
 COPY scripts/openclaw-make-ssl.sh /usr/local/bin/openclaw-make-ssl.sh
-COPY run_onboot/update_user.sh /scripts/scripts.d/update_user.sh
+COPY run_onboot /scripts/scripts.d
 COPY systemd/openresty.service /lib/systemd/system/openresty.service
 RUN chmod +x /usr/local/bin/openclaw-make-ssl.sh \
     && systemctl enable openresty.service
