@@ -97,9 +97,9 @@ jobs:
             # 将步骤 5 确定的 OpenClaw 版本传递给 Dockerfile 中的 OPENCLAW_VERSION 构建参数
             OPENCLAW_VERSION=${{ steps.check_release.outputs.latest_tag }}
           # 设置缓存源，使用 GitHub Actions 内置的缓存 (gha)
-          cache-from: type=gha
+          #cache-from: type=gha
           # 设置缓存目标，mode=max 表示尽可能多地缓存构建层
-          cache-to: type=gha,mode=max
+          #cache-to: type=gha,mode=max
           # 构建的目标平台：Linux on amd64 (x86_64) 和 Linux on arm64
           # 这是 Buildx 的特性，可以构建多架构的镜像清单
           platforms: linux/amd64,linux/arm64
