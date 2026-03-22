@@ -1,24 +1,11 @@
-name: OpenClaw in Docker 新版本构建
+name: 新版本发布构建
 on:
     push:
         tags:
             - 'v*'
-
-# 定义工作流级别的环境变量，在后续的 job 和 step 中都可以使用
-env:
-  REGISTRY: harbor.cncfstack.com        # 镜像仓库地址
-  IMAGE_NAME: cncfstack/openclaw-in-docker # 镜像名称（不包括仓库地址）
-
-# 定义要执行的任务（jobs），这里只有一个名为 'build' 的任务
 jobs:
   build:
-    # 指定任务运行在最新版的 Ubuntu 虚拟机环境上
     runs-on: ubuntu-latest
-
-    # 为当前 job 授予的权限
-    permissions:
-      contents: write
-
     steps:
       - uses: actions/checkout@v4
       - name: Build the Docker image
@@ -40,8 +27,14 @@ jobs:
           docker login  --username=${{ secrets.HARBOR_PUSH_USERNAME }} --password=${{ secrets.HARBOR_PUSH_PASSWORD }} harbor.cncfstack.com
           docker buildx create --name mybuilder --use
 
-          sed -i "s/VERSION_TAG/v${openclaw}-${{ github.ref_name }}/g" login/login.html
-          docker buildx build --platform linux/amd64,linux/arm64 --build-arg OPENCLAW_VERSION=${OPENCLAW_LATEST_TAG} --push . --file Dockerfile --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:dev
+          sed -i "s/VERSION_TAG/v${OPENCLAW_LATEST_TAG}-${{ github.ref_name }}/g" login/login.html
+          
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:v${OPENCLAW_LATEST_TAG}-${{ github.ref_name }} \
+            --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:latest \
+            --build-arg OPENCLAW_VERSION=${OPENCLAW_LATEST_TAG} \
+            --push . --file Dockerfile 
           
 
       # - name: Build and push Docker image (Tag)

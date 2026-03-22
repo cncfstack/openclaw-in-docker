@@ -1,4 +1,4 @@
-name: 新PUSH时自动构建dev
+name: 新PUSH时自动构建
 on:
     push:
       branches: [ "main" ]
@@ -27,8 +27,13 @@ jobs:
           docker buildx create --name mybuilder --use
 
           sed -i "s/VERSION_TAG/dev/g" login/login.html
-          docker buildx build --platform linux/amd64,linux/arm64 --build-arg OPENCLAW_VERSION=${OPENCLAW_LATEST_TAG} --push . --file Dockerfile --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:dev
-          
+
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:dev \
+            --build-arg OPENCLAW_VERSION=${OPENCLAW_LATEST_TAG} \
+            --push . --file Dockerfile
+
       - name: Generate build summary
         # 这是一个 Shell 脚本，内容是将 Markdown 格式的文本写入到 GITHUB_STEP_SUMMARY 文件中
         run: |
