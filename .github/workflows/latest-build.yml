@@ -10,9 +10,9 @@ jobs:
       - name: Build the Docker image
         id: build_image
         run: |
-          LATEST_TAG=$(curl -s https://api.github.com/repos/openclaw/openclaw/releases/latest | jq -r '.tag_name // empty' | tr -d 'v')
-          echo "Latest OpenClaw version: ${LATEST_TAG}"
-          echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
+          OPENCLAW_LATEST_TAG=$(curl -s https://api.github.com/repos/openclaw/openclaw/releases/latest | jq -r '.tag_name // empty' | tr -d 'v')
+          echo "Latest OpenClaw version: ${OPENCLAW_LATEST_TAG}"
+          echo "openclaw_latest_tag=${OPENCLAW_LATEST_TAG}" >> $GITHUB_OUTPUT
 
           # Create swapfile
           if [ -f /swapfile ]; then
@@ -27,14 +27,14 @@ jobs:
           docker buildx create --name mybuilder --use
 
           sed -i "s/VERSION_TAG/dev/g" login/login.html
-          docker buildx build --platform linux/amd64,linux/arm64 --build-arg OPENCLAW_VERSION=${latest_tag} --push . --file Dockerfile --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:dev
+          docker buildx build --platform linux/amd64,linux/arm64 --build-arg OPENCLAW_VERSION=${OPENCLAW_LATEST_TAG} --push . --file Dockerfile --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:dev
           
       - name: Generate build summary
         # 这是一个 Shell 脚本，内容是将 Markdown 格式的文本写入到 GITHUB_STEP_SUMMARY 文件中
         run: |
           echo "### 🦞 开发版本(dev)构建" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**OpenClaw Version:** \`${{ steps.build_image.outputs.latest_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**OpenClaw Version:** \`${{ steps.build_image.outputs.openclaw_latest_tag }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**当前项目版本:** \`dev\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
