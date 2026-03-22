@@ -33,7 +33,7 @@ docker run -itd \
   -e OPENCLAW_WEB_URL="https://localhost" \
   -e OPENCLAW_USER="openclaw" \
   -e OPENCLAW_PASSWORD="openclaw" \
-  registry.cncfstack.com/cncfstack/openclaw-in-docker:v2026.3.13-1-v0.1.2
+  registry.cncfstack.com/cncfstack/openclaw-in-docker:v2026.3.13-1-v0.2.0
 ```
 
 运行成功后，访问 [https://localhost](https://localhost) 输入用户名 `openclaw` 和密码 `openclaw` 进行登录。
@@ -101,12 +101,12 @@ docker exec -i openclaw-in-docker bash -- /usr/local/bin/openclaw-autoapprove-de
 镜像Tag命令如下
 
 ```
-registry.cncfstack.com/cncfstack/openclaw-in-docker:v2026.3.13-1-v0.1.2
+registry.cncfstack.com/cncfstack/openclaw-in-docker:v2026.3.13-1-v0.2.0
 ```
 
 镜像的 Tag 详情与列表 [https://cncfstack.com/i/cncfstack/openclaw-in-docker](https://cncfstack.com/i/cncfstack/openclaw-in-docker)
 
-Tag 中  `v2026.3.13-1` 是 OpenClaw 的版本号，`v0.1.2` 是指当前项目（OpenClaw-In-Docker）的版本号。
+Tag 中  `v2026.3.13-1` 是 OpenClaw 的版本号，`v0.2.0` 是指当前项目（OpenClaw-In-Docker）的版本号。
 
 ### 证书配置
 
@@ -170,7 +170,9 @@ origin not allowed (open the Control UI from the gateway host or allow it in gat
 
 **问题原因：**
 
-在执行 `docker run` 命令时，运行的端口和浏览器的端口不一致。
+在 `v0..1.2` 版本有个Bug，该bug会导致无法更换域名，只能使用 localhost 访问，这是因为 systemd 启动的进程使用的环境变量需要单独传入，无法直接使用系统的环境变量导致，该问题已经在 `v0.2.0` 版本修复，请升级到 `v0.2.0` 版本。
+
+如果已经部署运行后，已经存在了 `openclaw.json` 配置文件了，可以在配置文件中添加一条 `allowedOrigins` 配置项，如：`https://new-domain.com:10443`
 
 ```bash
   -p 10443:443 -p 10080:80 \
@@ -183,9 +185,21 @@ origin not allowed (open the Control UI from the gateway host or allow it in gat
   "gateway": {
     "controlUi": {
       "allowedOrigins": [
-        "https://localhost:10443"
+        "https://localhost:10443",
+        "https://new-domain.com:10443"
       ]
     },
 ```
 
 然后等待30秒左右，刷新页面 `https://localhost:10443`。或者重启openclaw或容器。
+
+### 浏览器打开报错 TSTS ，没有继续访按钮
+
+如果使用自签名证书在互联网上运行时，可能会收到如下提示。这是浏览器限制的
+
+您必须手动清除浏览器的 HSTS 缓存：
+
+- 在浏览器地址栏输入：chrome://net-internals/#hsts (Edge 浏览器也是这个地址)。
+- 找到页面底部的 "Delete domain security policies"。
+- 在输入框中输入您的域名：openclaw.cncfstack.com。
+- 点击 "Delete" 按钮。 完成这一步后，重新访问网站即可生效。
