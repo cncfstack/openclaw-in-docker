@@ -35,45 +35,21 @@ jobs:
             --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:latest \
             --build-arg OPENCLAW_VERSION=${OPENCLAW_LATEST_TAG} \
             --push . --file Dockerfile 
-          
-
-      # - name: Build and push Docker image (Tag)
-      #   uses: docker/build-push-action@v5  # 使用 Docker 官方的 build-push action
-      #   with:
-      #     context: .                       # 构建上下文为当前目录
-      #     file: ./Dockerfile              # 指定 Dockerfile 的路径
-      #     # 决定是否推送镜像到仓库
-      #     # 逻辑: 如果不是手动触发 (workflow_dispatch)，则总是推送。
-      #     #       如果是手动触发，则根据用户输入的 push_image 布尔值来决定是否推送。
-      #     push: true
-      #     # 要打的标签，从步骤 4 (id=meta) 的输出中获取
-      #     tags: |
-      #         v${{ steps.build_image.outputs.openclaw_latest_tag }}-${{ github.ref_name }}
-      #         latest
-      #     # 构建参数，传递给 Dockerfile 的 ARG 指令
-      #     build-args: |
-      #       # 将步骤 5 确定的 OpenClaw 版本传递给 Dockerfile 中的 OPENCLAW_VERSION 构建参数
-      #       OPENCLAW_VERSION=${{ steps.build_image.outputs.opencalw_latest_tag }}
-      #     # 设置缓存源，使用 GitHub Actions 内置的缓存 (gha)
-      #     #cache-from: type=gha
-      #     # 设置缓存目标，mode=max 表示尽可能多地缓存构建层
-      #     #cache-to: type=gha,mode=max
-      #     # 构建的目标平台：Linux on amd64 (x86_64) 和 Linux on arm64
-      #     # 这是 Buildx 的特性，可以构建多架构的镜像清单
-      #     platforms: linux/amd64,linux/arm64
 
       - name: Generate build summary
         # 这是一个 Shell 脚本，内容是将 Markdown 格式的文本写入到 GITHUB_STEP_SUMMARY 文件中
         run: |
           echo "### 🦞 OpenClaw In Docker 新版本构建" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**OpenClaw Version:** \`${{ steps.build_image.outputs.opencalw_latest_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**OpenClaw Version:** \`${{ steps.build_image.outputs.openclaw_latest_tag }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image Tags:**" >> $GITHUB_STEP_SUMMARY
+          echo "**当前项目版本:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**下载地址:**" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "v${{ steps.build_image.outputs.openclaw_latest_tag }}-${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull registry.cncfstack.com/cncfstack/openclaw-in-docker:v${OPENCLAW_LATEST_TAG}-${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull registry.cncfstack.com/cncfstack/openclaw-in-docker:latest" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Registry:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ OpenClaw In Docker 有新Tag时自动触发" >> $GITHUB_STEP_SUMMARY
+          echo "镜像列表 [cncfstack/openclaw-in-docker](https://cncfstack.com/i/cncfstack/openclaw-in-docker)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ OpenClaw In Docker 有新 Push 时自动触发" >> $GITHUB_STEP_SUMMARY

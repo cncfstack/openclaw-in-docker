@@ -24,35 +24,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4  # 使用 actions/checkout 这个官方 action 的 v4 版本
 
-      # 步骤 2: 设置 Docker Buildx
-      # Buildx 是 Docker CLI 的一个插件，支持多平台构建、高级缓存等特性
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # 步骤 3: 登录到容器镜像仓库
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3  # 使用 Docker 官方的登录 action
-        with:
-          registry: ${{ env.REGISTRY }}           # 从环境变量获取仓库地址
-          username: ${{ secrets.HARBOR_PUSH_USERNAME }} # 从 GitHub Secrets 获取用户名
-          password: ${{ secrets.HARBOR_PUSH_PASSWORD }} # 从 GitHub Secrets 获取密码
-
       - name: Check for new OpenClaw release
         id: check_release
         run: |
-          # Get the latest release from OpenClaw repository
-          LATEST_TAG=$(curl -s https://api.github.com/repos/openclaw/openclaw/releases/latest | jq -r '.tag_name // empty' | tr -d 'v')
-          INDOCKER_LATEST_TAG=$(git tag --sort=-v:refname | head -n 1)
 
-          echo "Latest OpenClaw version: ${LATEST_TAG}"
-          echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
+          OPENCLAW_LATEST_TAG=$(curl -s https://api.github.com/repos/openclaw/openclaw/releases/latest | jq -r '.tag_name // empty' | tr -d 'v')
+          echo "Latest OpenClaw version: ${OPENCLAW_LATEST_TAG}"
+          echo "openclaw_latest_tag=${OPENCLAW_LATEST_TAG}" >> $GITHUB_OUTPUT
+
+          INDOCKER_LATEST_TAG=$(git tag --sort=-v:refname | head -n 1)
+          echo "Indocker latest tag: ${INDOCKER_LATEST_TAG}"
+          echo "indocker_latest_tag=${INDOCKER_LATEST_TAG}" >> $GITHUB_OUTPUT
 
           # Check if we've already built this version
           if [ -f ".last-openclaw-tag" ]; then
-            LAST_TAG=$(cat .last-openclaw-tag)
-            echo "Last built tag: ${LAST_TAG}"
+            OPENCLAW_LAST_TAG=$(cat .last-openclaw-tag)
+            echo "Last built tag: ${OPENCLAW_LAST_TAG}"
             
-            if [ "$LATEST_TAG" = "$LAST_TAG" ]; then
+            if [ "$OPENCLAW_LATEST_TAG" = "$OPENCLAW_LAST_TAG" ]; then
               echo "new_tag=false" >> $GITHUB_OUTPUT
               echo "No new release found"
             else
@@ -64,60 +53,55 @@ jobs:
             echo "First run - will build"
           fi
 
-          echo "indocker_latest_tag=${INDOCKER_LATEST_TAG}" >> $GITHUB_OUTPUT
-
       - name: Update version tracker
         if: steps.check_release.outputs.new_tag == 'true'
         run: |
-          echo "${{ steps.check_release.outputs.latest_tag }}" > .last-openclaw-tag
+          echo "${{ steps.check_release.outputs.openclaw_latest_tag }}" > .last-openclaw-tag
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .last-openclaw-tag
-          git diff --quiet && git diff --staged --quiet || git commit -m "Update OpenClaw version  to ${{ steps.check_release.outputs.latest_tag }} "
+          git diff --quiet && git diff --staged --quiet || git commit -m "[bot] Update OpenClaw version  to ${{ steps.check_release.outputs.latest_tag }} "
           git push
 
+      - name: Build the Docker image
+        id: build_image
+        run: |
 
-      # 步骤 6: 构建并推送 Docker 镜像（核心步骤）
-      - name: Build and push Docker image (Tag)
-        if: steps.check_release.outputs.new_tag == 'true'
-        uses: docker/build-push-action@v5  # 使用 Docker 官方的 build-push action
-        with:
-          context: .                       # 构建上下文为当前目录
-          file: ./Dockerfile              # 指定 Dockerfile 的路径
-          # 决定是否推送镜像到仓库
-          # 逻辑: 如果不是手动触发 (workflow_dispatch)，则总是推送。
-          #       如果是手动触发，则根据用户输入的 push_image 布尔值来决定是否推送。
-          push: true
-          # 要打的标签，从步骤 4 (id=meta) 的输出中获取
-          tags:  |
-              v${{ steps.check_release.outputs.latest_tag }}-${{ steps.check_release.outputs.indocker_latest_tag }}
-              latest
-          # 构建参数，传递给 Dockerfile 的 ARG 指令
-          build-args: |
-            # 将步骤 5 确定的 OpenClaw 版本传递给 Dockerfile 中的 OPENCLAW_VERSION 构建参数
-            OPENCLAW_VERSION=${{ steps.check_release.outputs.latest_tag }}
-          # 设置缓存源，使用 GitHub Actions 内置的缓存 (gha)
-          #cache-from: type=gha
-          # 设置缓存目标，mode=max 表示尽可能多地缓存构建层
-          #cache-to: type=gha,mode=max
-          # 构建的目标平台：Linux on amd64 (x86_64) 和 Linux on arm64
-          # 这是 Buildx 的特性，可以构建多架构的镜像清单
-          platforms: linux/amd64,linux/arm64
+          # Create swapfile
+          if [ -f /swapfile ]; then
+              sudo swapoff /swapfile 2>/dev/null || true
+          fi
+          sudo dd if=/dev/zero of=/swapfile bs=1M count=4096
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          free -g
+  
+          docker login  --username=${{ secrets.HARBOR_PUSH_USERNAME }} --password=${{ secrets.HARBOR_PUSH_PASSWORD }} harbor.cncfstack.com
+          docker buildx create --name mybuilder --use
 
-      # 步骤 7: 生成构建摘要，在 GitHub Actions 运行报告的“Steps”部分显示一个美观的总结
+          sed -i "s/VERSION_TAG/v${{ steps.check_release.outputs.openclaw_latest_tag }}-${{ steps.check_release.outputs.indocker_latest_tag }}/g" login/login.html
+          
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:v${{ steps.check_release.outputs.openclaw_latest_tag }}-${{ steps.check_release.outputs.indocker_latest_tag }} \
+            --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:latest \
+            --build-arg OPENCLAW_VERSION=${{ steps.check_release.outputs.openclaw_latest_tag }} \
+            --push . --file Dockerfile 
+
       - name: Generate build summary
         # 这是一个 Shell 脚本，内容是将 Markdown 格式的文本写入到 GITHUB_STEP_SUMMARY 文件中
-        if: steps.check_release.outputs.new_tag == 'true'
         run: |
-          echo "### 🦞 OpenClaw新版本构建" >> $GITHUB_STEP_SUMMARY
+          echo "### 🦞 OpenClaw 新版本构建" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**OpenClaw Version:** \`${{ steps.check_release.outputs.latest_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**OpenClaw Version:** \`${{ steps.check_release.outputs.openclaw_latest_tag }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image Tags:**" >> $GITHUB_STEP_SUMMARY
+          echo "**当前项目版本:** \`${{ steps.check_release.outputs.indocker_latest_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**下载地址:**" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "v${{ steps.check_release.outputs.latest_tag }}-${{ steps.check_release.outputs.indocker_latest_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull registry.cncfstack.com/cncfstack/openclaw-in-docker:v${{ steps.check_release.outputs.openclaw_latest_tag }}-${{ steps.check_release.outputs.indocker_latest_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull registry.cncfstack.com/cncfstack/openclaw-in-docker:latest" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Registry:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ OpenClaw有新Tag时自动触发" >> $GITHUB_STEP_SUMMARY
+          echo "镜像列表 [cncfstack/openclaw-in-docker](https://cncfstack.com/i/cncfstack/openclaw-in-docker)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ OpenClaw In Docker 有新 Push 时自动触发" >> $GITHUB_STEP_SUMMARY
