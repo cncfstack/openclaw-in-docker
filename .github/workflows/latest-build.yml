@@ -38,7 +38,14 @@ jobs:
           registry: ${{ env.REGISTRY }}           # 从环境变量获取仓库地址
           username: ${{ secrets.HARBOR_PUSH_USERNAME }} # 从 GitHub Secrets 获取用户名
           password: ${{ secrets.HARBOR_PUSH_PASSWORD }} # 从 GitHub Secrets 获取密码
- 
+
+      - name: Check for new OpenClaw release
+        id: check_release
+        run: |
+          LATEST_TAG=$(curl -s https://api.github.com/repos/openclaw/openclaw/releases/latest | jq -r '.tag_name // empty' | tr -d 'v')
+          echo "Latest OpenClaw version: ${LATEST_TAG}"
+          echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image (Tag)
         uses: docker/build-push-action@v5  # 使用 Docker 官方的 build-push action
         with:
@@ -53,7 +60,7 @@ jobs:
           # 构建参数，传递给 Dockerfile 的 ARG 指令
           build-args: |
             # 将步骤 5 确定的 OpenClaw 版本传递给 Dockerfile 中的 OPENCLAW_VERSION 构建参数
-            OPENCLAW_VERSION=main
+            OPENCLAW_VERSION=${{ steps.check_release.outputs.latest_tag }}
           # 设置缓存源，使用 GitHub Actions 内置的缓存 (gha)
           cache-from: type=gha
           # 设置缓存目标，mode=max 表示尽可能多地缓存构建层
