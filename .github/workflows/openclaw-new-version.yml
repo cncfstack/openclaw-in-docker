@@ -64,6 +64,7 @@ jobs:
           git push
 
       - name: Build the Docker image
+        if: steps.check_release.outputs.new_tag == 'true'
         id: build_image
         run: |
 
@@ -89,7 +90,7 @@ jobs:
             --push . --file Dockerfile 
 
       - name: Generate build summary
-        # 这是一个 Shell 脚本，内容是将 Markdown 格式的文本写入到 GITHUB_STEP_SUMMARY 文件中
+        if: steps.check_release.outputs.new_tag == 'true'
         run: |
           echo "### 🦞 OpenClaw 新版本构建" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
