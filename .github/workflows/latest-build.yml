@@ -1,4 +1,4 @@
-name: OpenClaw In Docker 新提交自动构建
+name: 新PUSH时自动构建
 on:
     push:
       branches: [ "main" ]
