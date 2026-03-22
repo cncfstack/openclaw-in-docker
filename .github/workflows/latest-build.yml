@@ -1,0 +1,79 @@
+name: OpenClaw In Docker 新提交自动构建
+on:
+    push:
+      branches: [ "main" ]
+    pull_request:
+      branches: [ "main" ]
+
+# 定义工作流级别的环境变量，在后续的 job 和 step 中都可以使用
+env:
+  REGISTRY: harbor.cncfstack.com        # 镜像仓库地址
+  IMAGE_NAME: cncfstack/openclaw-in-docker # 镜像名称（不包括仓库地址）
+
+# 定义要执行的任务（jobs），这里只有一个名为 'build' 的任务
+jobs:
+  build:
+    # 指定任务运行在最新版的 Ubuntu 虚拟机环境上
+    runs-on: ubuntu-latest
+
+    # 为当前 job 授予的权限
+    permissions:
+      contents: write
+
+    # 定义 job 的执行步骤，按顺序运行
+    steps:
+      # 步骤 1: 检出当前仓库的代码
+      - name: Checkout repository
+        uses: actions/checkout@v4  # 使用 actions/checkout 这个官方 action 的 v4 版本
+
+      # 步骤 2: 设置 Docker Buildx
+      # Buildx 是 Docker CLI 的一个插件，支持多平台构建、高级缓存等特性
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 步骤 3: 登录到容器镜像仓库
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3  # 使用 Docker 官方的登录 action
+        with:
+          registry: ${{ env.REGISTRY }}           # 从环境变量获取仓库地址
+          username: ${{ secrets.HARBOR_PUSH_USERNAME }} # 从 GitHub Secrets 获取用户名
+          password: ${{ secrets.HARBOR_PUSH_PASSWORD }} # 从 GitHub Secrets 获取密码
+ 
+      - name: Build and push Docker image (Tag)
+        uses: docker/build-push-action@v5  # 使用 Docker 官方的 build-push action
+        with:
+          context: .                       # 构建上下文为当前目录
+          file: ./Dockerfile              # 指定 Dockerfile 的路径
+          # 决定是否推送镜像到仓库
+          # 逻辑: 如果不是手动触发 (workflow_dispatch)，则总是推送。
+          #       如果是手动触发，则根据用户输入的 push_image 布尔值来决定是否推送。
+          push: true
+          # 要打的标签，从步骤 4 (id=meta) 的输出中获取
+          tags: dev
+          # 构建参数，传递给 Dockerfile 的 ARG 指令
+          build-args: |
+            # 将步骤 5 确定的 OpenClaw 版本传递给 Dockerfile 中的 OPENCLAW_VERSION 构建参数
+            OPENCLAW_VERSION=main
+          # 设置缓存源，使用 GitHub Actions 内置的缓存 (gha)
+          cache-from: type=gha
+          # 设置缓存目标，mode=max 表示尽可能多地缓存构建层
+          cache-to: type=gha,mode=max
+          # 构建的目标平台：Linux on amd64 (x86_64) 和 Linux on arm64
+          # 这是 Buildx 的特性，可以构建多架构的镜像清单
+          platforms: linux/amd64,linux/arm64
+
+      - name: Generate build summary
+        # 这是一个 Shell 脚本，内容是将 Markdown 格式的文本写入到 GITHUB_STEP_SUMMARY 文件中
+        run: |
+          echo "### 🦞 开发版本（dev）构建" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**OpenClaw Version:** \`main\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tags:**" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "dev" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Registry:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ OpenClaw In Docker 有新 Push 时自动触发" >> $GITHUB_STEP_SUMMARY
