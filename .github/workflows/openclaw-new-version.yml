@@ -32,7 +32,7 @@ jobs:
           echo "Latest OpenClaw version: ${OPENCLAW_LATEST_TAG}"
           echo "openclaw_latest_tag=${OPENCLAW_LATEST_TAG}" >> $GITHUB_OUTPUT
 
-          INDOCKER_LATEST_TAG=$(git tag --sort=-v:refname | head -n 1)
+          INDOCKER_LATEST_TAG=$(curl -s https://api.github.com/repos/cncfstack/openclaw-in-docker/releases/latest | jq -r '.tag_name // empty')
           echo "Indocker latest tag: ${INDOCKER_LATEST_TAG}"
           echo "indocker_latest_tag=${INDOCKER_LATEST_TAG}" >> $GITHUB_OUTPUT
 
