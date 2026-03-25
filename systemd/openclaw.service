@@ -7,7 +7,7 @@ Type=simple
 User=root
 Group=root
 WorkingDirectory=/app
-Environment="OPENCLAW_WEB_URL=SED_OPENCLAW_WEB_URL"
+EnvironmentFile=/root/.env
 ExecStartPre=/usr/local/bin/openclaw-before.sh
 ExecStart=openclaw gateway --allow-unconfigured
 

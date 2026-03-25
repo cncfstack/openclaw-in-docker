@@ -16,8 +16,7 @@ After=syslog.target network-online.target remote-fs.target nss-lookup.target
 Wants=network-online.target
 
 [Service]
-Environment="OPENCLAW_USER=SED_USER"
-Environment="OPENCLAW_PASSWORD=SED_PASSWORD"
+EnvironmentFile=/root/.env
 Type=forking
 PIDFile=/usr/local/openresty/nginx/logs/nginx.pid
 ExecStartPre=/usr/local/bin/openclaw-make-ssl.sh
