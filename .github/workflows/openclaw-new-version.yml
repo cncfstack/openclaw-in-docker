@@ -57,9 +57,10 @@ jobs:
         if: steps.check_release.outputs.new_tag == 'true'
         run: |
           echo "${{ steps.check_release.outputs.openclaw_latest_tag }}" > .last-openclaw-tag
+          sed -i "s|registry.cncfstack.com/cncfstack/openclaw-in-docker:.*|registry.cncfstack.com/cncfstack/openclaw-in-docker:v${{ steps.check_release.outputs.openclaw_latest_tag }}-${{ steps.check_release.outputs.indocker_latest_tag }}|g" README.md
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .last-openclaw-tag
+          git add .last-openclaw-tag README.md
           git diff --quiet && git diff --staged --quiet || git commit -m "[bot] Update OpenClaw version  to ${{ steps.check_release.outputs.latest_tag }} "
           git push
 

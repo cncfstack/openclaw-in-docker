@@ -6,6 +6,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # 为当前 job 授予的权限
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: Build the Docker image
@@ -34,8 +37,15 @@ jobs:
             --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:v${OPENCLAW_LATEST_TAG}-${{ github.ref_name }} \
             --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:latest \
             --build-arg OPENCLAW_VERSION=${OPENCLAW_LATEST_TAG} \
-            --push . --file Dockerfile 
-
+            --push . --file Dockerfile
+      - name: Update version tracker
+        run: |
+          sed -i "s|registry.cncfstack.com/cncfstack/openclaw-in-docker:.*|registry.cncfstack.com/cncfstack/openclaw-in-docker:v${{ steps.build_image.outputs.openclaw_latest_tag }}-${{ github.ref_name }}|g" README.md
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --quiet && git diff --staged --quiet || git commit -m "[bot] Update InDocker version to ${{ github.ref_name }}"
+          git push
       - name: Generate build summary
         # 这是一个 Shell 脚本，内容是将 Markdown 格式的文本写入到 GITHUB_STEP_SUMMARY 文件中
         run: |

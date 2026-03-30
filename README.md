@@ -33,7 +33,7 @@ docker run -itd \
   -e OPENCLAW_WEB_URL="https://localhost" \
   -e OPENCLAW_USER="openclaw" \
   -e OPENCLAW_PASSWORD="openclaw" \
-  registry.cncfstack.com/cncfstack/openclaw-in-docker:v2026.3.24-v0.2.1
+  registry.cncfstack.com/cncfstack/openclaw-in-docker:v2026.3.28-v0.2.1
 ```
 
 运行成功后，访问 [https://localhost](https://localhost) 输入用户名 `openclaw` 和密码 `openclaw` 进行登录。
@@ -98,15 +98,11 @@ docker exec -i openclaw-in-docker bash -- /usr/local/bin/openclaw-autoapprove-de
 
 ### 镜像 Tag 版本的说明
 
-镜像Tag命令如下
-
-```
-registry.cncfstack.com/cncfstack/openclaw-in-docker:v2026.3.24-v0.2.1
-```
-
 镜像的 Tag 详情与列表 [https://cncfstack.com/i/cncfstack/openclaw-in-docker](https://cncfstack.com/i/cncfstack/openclaw-in-docker)
 
-Tag 中  `v2026.3.24` 是 OpenClaw 的版本号，`v0.2.1` 是指当前项目（OpenClaw-In-Docker）的版本号。
+镜像Tag格式如下 `vY.M.D-vx.y.z`
+
+Tag 中  `vY.M.D` 是 OpenClaw 的版本号，`vx.y.z` 是指当前项目（OpenClaw-In-Docker）的版本号。
 
 ### 证书配置
 
