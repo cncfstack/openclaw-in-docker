@@ -199,3 +199,13 @@ origin not allowed (open the Control UI from the gateway host or allow it in gat
 - 找到页面底部的 "Delete domain security policies"。
 - 在输入框中输入您的域名：openclaw.cncfstack.com。
 - 点击 "Delete" 按钮。 完成这一步后，重新访问网站即可生效。
+
+## 联系方式
+
+欢迎提交建议和沟通交流学习，通过邮件或添加微信交流：
+
+**邮箱:**  <zhaowenyu@cncfstack.com>
+
+**微信:**
+
+![微信二维码](https://cncfstack.com/zhaowenyu-wx.png)
