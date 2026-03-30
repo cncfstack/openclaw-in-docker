@@ -4,8 +4,8 @@ OpenClaw In Docker 提供一个类似虚拟机的环境，一键运行 OpenClaw 
 
 OpenClaw In Docker 特点：
 
-1. **隔离式类虚拟机运行环境**：基于 [csvm](https://github.com/cncfstack/csvm) 项目构建类虚拟机容器。系统内集成了 `systemd/docker/cron/sshd` 等独立服务，支持多服务运行、开启启动逻辑等功能。
-1. **增强OpenClaw安全，提供用户登录功能**：内置基于 OpenResty + Lua 的认证层。所有用户请求均需经过登录验证，确保了 OpenClaw 控制面板的访问安全性。
+1. **隔离式类虚拟机运行环境**：基于 [csvm](https://github.com/cncfstack/csvm) 项目构建类虚拟机容器。系统内集成了 `systemd/docker/cron/sshd` 等独立服务，支持多服务运行、开机启动逻辑等功能。
+1. **提供用户登录功能**：增强OpenClaw安全，内置基于 OpenResty + Lua 的认证层。所有用户请求均需经过登录验证，确保了 OpenClaw 控制面板的访问安全性。
 1. **强制实施 HTTPS 访问**：系统默认预配置 OpenSSL 自签名证书，支持开箱即用的加密通信能力。
 1. **OpenClaw源码构建+OpenResty代理**：基于最新的 OpenClaw 源码构建，并使用 OpenResty 代理。
 1. **智能化套件工具**: 预集成 Chromium 浏览器与 Playwright 自动化框架，支持复杂的网页抓取、UI 自动化测试及无头浏览器任务流。
@@ -13,15 +13,20 @@ OpenClaw In Docker 特点：
 
 适合的场景：
 
-1. 为保障宿主机安全，需要OpenClaw运行在隔离的 Docker 容器中的用户。
-1. 在服务器上进行7x24不停机的运行OpenClaw的用户。
+1. 为保障宿主机安全，需要OpenClaw运行在隔离的 Docker 容器中场景。
+1. 在服务器上进行7x24不停机运行OpenClaw场景。
 1. 通过互联网访问Web页面进行配置管理和沟通交流场景（官方的默认不建议在网络上开放页面）。
 1. 期望容器版本OpenClaw也能实现类似机器上运行的能力，如使用Docker沙箱、配置系统 Crontab 任务。（官方Docker方案不支持）
 
 
+历史版本：
+
+1. 镜像 Tag 详情与列表 [https://cncfstack.com/i/cncfstack/openclaw-in-docker](https://cncfstack.com/i/cncfstack/openclaw-in-docker)
+
+
 ## 快速开始
 
-搭建OpenClaw只需要3步： 1.运行OpenClaw、2.获取令牌Token，以及3.设备审批。
+搭建OpenClaw只需要3步： 1.运行OpenClaw、2.获取令牌Token、3.设备审批。
 
 ### 1. 运行OpenClaw
 
@@ -106,8 +111,6 @@ docker exec -i openclaw-in-docker bash -- /usr/local/bin/openclaw-autoapprove-de
 ## OpenClaw 管理
 
 ### 镜像 Tag 版本的说明
-
-镜像的 Tag 详情与列表 [https://cncfstack.com/i/cncfstack/openclaw-in-docker](https://cncfstack.com/i/cncfstack/openclaw-in-docker)
 
 镜像Tag格式如下 `vY.M.D-vx.y.z`
 
