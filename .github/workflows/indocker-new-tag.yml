@@ -45,6 +45,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add README.md
           git diff --quiet && git diff --staged --quiet || git commit -m "[bot] Update InDocker version to ${{ github.ref_name }}"
+          # 关键修复步骤：强制将当前提交重置为 main 分支, 基于tag触发流水线时默认没有main分支
+          git branch -M main
           git push origin main
       - name: Generate build summary
         # 这是一个 Shell 脚本，内容是将 Markdown 格式的文本写入到 GITHUB_STEP_SUMMARY 文件中
