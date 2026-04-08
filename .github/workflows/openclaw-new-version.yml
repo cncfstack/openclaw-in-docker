@@ -1,7 +1,7 @@
 name: OpenClaw新版本发布自动构建
 on:
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '0 */3 * * *'
 
 # 定义工作流级别的环境变量，在后续的 job 和 step 中都可以使用
 env:
