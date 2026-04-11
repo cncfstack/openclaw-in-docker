@@ -1,22 +1,33 @@
-name: 新版本发布构建
+name: InDocker新版本发布构建
+
 on:
-    push:
-        tags:
-            - 'v*'
+  release:
+    types: [published]  # 当 release 被发布时触发
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    # 为当前 job 授予的权限
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 检出 release 对应的分支
+          ref: ${{ github.event.release.target_commitish || github.ref_name }}
+          # 获取完整历史，避免推送问题
+          fetch-depth: 0
+      
       - name: Build the Docker image
         id: build_image
         run: |
           OPENCLAW_LATEST_TAG=$(curl -s https://api.github.com/repos/openclaw/openclaw/releases/latest | jq -r '.tag_name // empty' | tr -d 'v')
           echo "Latest OpenClaw version: ${OPENCLAW_LATEST_TAG}"
-          echo "opencalw_latest_tag=${OPENCLAW_LATEST_TAG}" >> $GITHUB_OUTPUT
+          # 修复拼写错误
+          echo "openclaw_latest_tag=${OPENCLAW_LATEST_TAG}" >> $GITHUB_OUTPUT
+
+          # 版本标签使用 Release 的 tag
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+          echo "release_tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
 
           # Create swapfile
           if [ -f /swapfile ]; then
@@ -27,41 +38,67 @@ jobs:
           sudo swapon /swapfile
           free -g
   
-          docker login  --username=${{ secrets.HARBOR_PUSH_USERNAME }} --password=${{ secrets.HARBOR_PUSH_PASSWORD }} harbor.cncfstack.com
+          docker login --username=${{ secrets.HARBOR_PUSH_USERNAME }} --password=${{ secrets.HARBOR_PUSH_PASSWORD }} harbor.cncfstack.com
           docker buildx create --name mybuilder --use
 
-          sed -i "s/VERSION_TAG/v${OPENCLAW_LATEST_TAG}-${{ github.ref_name }}/g" login/login.html
+          sed -i "s/VERSION_TAG/v${OPENCLAW_LATEST_TAG}-${RELEASE_TAG}/g" login/login.html
           
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
-            --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:v${OPENCLAW_LATEST_TAG}-${{ github.ref_name }} \
+            --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:v${OPENCLAW_LATEST_TAG}-${RELEASE_TAG} \
             --tag harbor.cncfstack.com/cncfstack/openclaw-in-docker:latest \
             --build-arg OPENCLAW_VERSION=${OPENCLAW_LATEST_TAG} \
             --push . --file Dockerfile
+
       - name: Update version tracker
         run: |
-          sed -i "s|registry.cncfstack.com/cncfstack/openclaw-in-docker:.*|registry.cncfstack.com/cncfstack/openclaw-in-docker:v${{ steps.build_image.outputs.openclaw_latest_tag }}-${{ github.ref_name }}|g" README.md
+          # 获取版本信息
+          OPENCLAW_VER="${{ steps.build_image.outputs.openclaw_latest_tag }}"
+          RELEASE_VER="${{ steps.build_image.outputs.release_tag }}"
+          
+          # 更新 README
+          sed -i "s|registry.cncfstack.com/cncfstack/openclaw-in-docker:.*|registry.cncfstack.com/cncfstack/openclaw-in-docker:v${OPENCLAW_VER}-${RELEASE_VER}|g" README.md
+          
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add README.md
-          git diff --quiet && git diff --staged --quiet || git commit -m "[bot] Update InDocker version to ${{ github.ref_name }}"
-          # 关键修复步骤：强制将当前提交重置为 main 分支, 基于tag触发流水线时默认没有main分支
-          git branch -M main
-          git push origin main
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "[bot] Update InDocker version to ${RELEASE_VER}"
+            # 获取目标分支（优先使用 release 的分支，否则使用默认分支）
+            TARGET_BRANCH="${{ github.event.release.target_commitish }}"
+            if [ -z "${TARGET_BRANCH}" ] || [ "${TARGET_BRANCH}" = "null" ]; then
+              TARGET_BRANCH="${{ github.event.repository.default_branch }}"
+            fi
+            
+            # 拉取最新代码避免冲突
+            git fetch origin ${TARGET_BRANCH}
+            git rebase origin/${TARGET_BRANCH} || true
+            
+            # 推送到分支
+            git push origin HEAD:${TARGET_BRANCH}
+          fi
+
       - name: Generate build summary
-        # 这是一个 Shell 脚本，内容是将 Markdown 格式的文本写入到 GITHUB_STEP_SUMMARY 文件中
         run: |
+          OPENCLAW_VER="${{ steps.build_image.outputs.openclaw_latest_tag }}"
+          RELEASE_VER="${{ steps.build_image.outputs.release_tag }}"
+          
           echo "### 🦞 OpenClaw In Docker 新版本构建" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**OpenClaw Version:** \`${{ steps.build_image.outputs.openclaw_latest_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**OpenClaw Version:** \`${OPENCLAW_VER}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**当前项目版本:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**当前项目版本:** \`${RELEASE_VER}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Release 分支:** \`${{ github.event.release.target_commitish }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**下载地址:**" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "docker pull registry.cncfstack.com/cncfstack/openclaw-in-docker:v${OPENCLAW_LATEST_TAG}-${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull registry.cncfstack.com/cncfstack/openclaw-in-docker:v${OPENCLAW_VER}-${RELEASE_VER}" >> $GITHUB_STEP_SUMMARY
           echo "docker pull registry.cncfstack.com/cncfstack/openclaw-in-docker:latest" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "镜像列表 [cncfstack/openclaw-in-docker](https://cncfstack.com/i/cncfstack/openclaw-in-docker)" >> $GITHUB_STEP_SUMMARY
-          echo "✅ OpenClaw In Docker 有新 Push 时自动触发" >> $GITHUB_STEP_SUMMARY
+          echo "✅ 基于 Release 自动触发构建" >> $GITHUB_STEP_SUMMARY

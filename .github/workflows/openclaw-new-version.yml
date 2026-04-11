@@ -1,4 +1,4 @@
-name: OpenClaw新版本发布自动构建
+name: OpenClaw新版本发布
 on:
   schedule:
     - cron: '0 */3 * * *'

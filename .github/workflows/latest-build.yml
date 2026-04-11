@@ -1,4 +1,4 @@
-name: PUSH时自动构建
+name: 人工PUSH
 on:
     push:
       branches: [ "main" ]
