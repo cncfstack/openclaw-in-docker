@@ -42,6 +42,7 @@ docker run -itd \
   --restart always \
   -p 443:443 -p 80:80 \
   -v /lib/modules:/lib/modules:ro \
+  -v /etc/localtime:/etc/localtime \
   -v openclaw-storage:/var \
   -v ./data/openclaw:/root/.openclaw \
   -e OPENCLAW_WEB_URL="https://localhost" \
