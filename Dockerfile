@@ -72,7 +72,8 @@ COPY scripts/openclaw-make-ssl.sh /usr/local/bin/openclaw-make-ssl.sh
 COPY run_onboot /scripts/scripts.d
 COPY systemd/openresty.service /lib/systemd/system/openresty.service
 RUN chmod +x /usr/local/bin/openclaw-make-ssl.sh \
-    && systemctl enable openresty.service
+    && systemctl enable openresty.service \
+    && systemctl enable cron.service
 
 #  Cronjob, autoapprove
 # Cron在进行安装时，文件最后必须要有一个空行，否则会报错
