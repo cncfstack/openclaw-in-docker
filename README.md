@@ -48,7 +48,7 @@ docker run -itd \
   -e OPENCLAW_WEB_URL="https://localhost" \
   -e OPENCLAW_USER="openclaw" \
   -e OPENCLAW_PASSWORD="openclaw" \
-  registry.cncfstack.com/cncfstack/openclaw-in-docker:v2026.4.11-v0.3.0
+  registry.cncfstack.com/cncfstack/openclaw-in-docker:v2026.4.12-v0.3.0
 ```
 
 运行成功后，访问 [https://localhost](https://localhost) 输入用户名 `openclaw` 和密码 `openclaw` 进行登录。
