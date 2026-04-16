@@ -99,8 +99,9 @@ RUN chown -R node:node /app
 # 默认安装缺少 vite 和 preview
 RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile \
     && pnpm add vite -w \
-    && cd /app/ui && pnpm add @create-markdown/preview -D -w && cd /app \
+    && pnpm add @create-markdown/preview -w \
     && pnpm build \
+    && cd /app/ui && pnpm add @create-markdown/preview -w && cd /app \
     && pnpm ui:install \
     && pnpm ui:build \
     && pnpm store prune && pnpm cache clean
