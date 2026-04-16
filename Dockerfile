@@ -96,10 +96,14 @@ RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git .
 RUN chown -R node:node /app
 #RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile  --registry https://registry.npmmirror.com
 #RUN pnpm config set ignore-workspace-root-check true && pnpm add vite -w && NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
-RUN pnpm add vite -w && NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
-RUN pnpm build
-RUN pnpm ui:install
-RUN pnpm ui:build
+# 默认安装缺少 vite 和 preview
+RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile \
+    && pnpm add vite -w \
+    && cd /app/ui && pnpm add @create-markdown/preview -D -w && cd /app \
+    && pnpm build \
+    && pnpm ui:install \
+    && pnpm ui:build \
+    && pnpm store prune && pnpm cache clean
 
 COPY scripts/openclaw-before.sh /usr/local/bin/openclaw-before.sh
 COPY scripts/openclaw-autoapprove-devices.sh  /usr/local/bin/openclaw-autoapprove-devices.sh
