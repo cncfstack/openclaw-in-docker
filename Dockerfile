@@ -96,7 +96,7 @@ RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git .
 RUN chown -R node:node /app
 #RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile  --registry https://registry.npmmirror.com
 #RUN pnpm config set ignore-workspace-root-check true && pnpm add vite -w && NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
-RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
+RUN pnpm add vite -w && NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
 RUN pnpm build
 RUN pnpm ui:install
 RUN pnpm ui:build
