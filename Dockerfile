@@ -55,7 +55,12 @@ RUN pnpm build
 RUN pnpm ui:install
 RUN pnpm ui:build
 RUN pnpm build:docker
-RUN echo "/build =======> " && ls -l /build && echo "/build/dist======>" && ls -l /build/dist && echo "/build/ui/dist======>" &7 ls -l /build/ui/dist
+RUN echo "/build =======> " \
+    && ls -l /build \
+    && echo "/build/dist======>" \
+    && ls -l /build/dist \
+    && echo "/build/ui/dist======>" \
+    && ls -l /build/ui/dist
 
 # ============================================
 # 阶段 2: Runtime - 运行环境
