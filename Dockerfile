@@ -1,4 +1,4 @@
-FROM registry.cncfstack.com/cncfstack/csvm:v0.2.0-bookworm AS builder
+FROM registry.cncfstack.com/cncfstack/csvm:v0.2.1-bookworm AS builder
 # ============================================
 # 阶段 1: Builder - 编译和构建
 # ============================================
@@ -60,11 +60,10 @@ RUN pnpm prune --prod && \
 
 
 
-
 # ============================================
 # 阶段 2: Runtime - 运行环境
 # ============================================
-FROM registry.cncfstack.com/cncfstack/csvm:v0.2.0-bookworm AS runtime
+FROM registry.cncfstack.com/cncfstack/csvm:v0.2.1-bookworm AS runtime
 
 LABEL org.opencontainers.image.base.name="registry.cnfstack.com/cncfstack/csvm:v0.2.0-bookworm" \
   org.opencontainers.image.source="https://github.com/cncfstack/openclaw-in-docker" \
