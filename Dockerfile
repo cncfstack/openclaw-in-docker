@@ -53,12 +53,6 @@ RUN pnpm canvas:a2ui:bundle || \
 # 构建项目
 RUN pnpm build && pnpm build:docker && pnpm ui:build
 
-# 清理开发依赖（准备生产环境）
-RUN pnpm prune --prod && \
-    pnpm store prune && \
-    find . -type f \( -name "*.map" -o -name "*.d.ts" -o -name "*.d.mts" \) -delete
-
-
 
 # ============================================
 # 阶段 2: Runtime - 运行环境
