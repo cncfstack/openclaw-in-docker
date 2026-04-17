@@ -118,7 +118,7 @@ RUN pnpm canvas:a2ui:bundle || \
      echo "/* A2UI bundle unavailable in this build */" > src/canvas-host/a2ui/a2ui.bundle.js && \
      echo "stub" > src/canvas-host/a2ui/.bundle.hash && \
      rm -rf vendor/a2ui apps/shared/OpenClawKit/Tools/CanvasA2UI)
-RUN pnpm build:docker
+
 #RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile  --registry https://registry.npmmirror.com
 #RUN pnpm config set ignore-workspace-root-check true && pnpm add vite -w && NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
 # 默认安装缺少 vite 和 preview
@@ -129,6 +129,7 @@ RUN --mount=type=cache,id=openclaw-pnpm-store,target=/root/.local/share/pnpm/sto
     && cd /app/ui && pnpm add @create-markdown/preview -w && cd /app
 
 RUN pnpm build
+RUN pnpm build:docker
 RUN pnpm ui:install
 RUN pnpm ui:build
 RUN pnpm store prune && pnpm cache clean
