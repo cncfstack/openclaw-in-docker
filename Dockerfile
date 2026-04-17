@@ -85,12 +85,8 @@ RUN DEBIAN_FRONTEND=noninteractive clean-install nodejs \
         xvfb \
         curl \
         ca-certificates \
-    && groupadd  node || true \
-    && useradd  --gid node --shell /bin/bash --create-home node || true \
-    && rm -f /usr/share/keyrings/nodesource.gpg \
-    && rm -f /etc/apt/sources.list.d/nodesource.list \
-    && rm -f /etc/apt/sources.list.d/nodesource.sources \
-
+    && groupadd  node  \
+    && useradd  --gid node --shell /bin/bash --create-home node
 
 # Install OpenResty
 # https://openresty.org/en/linux-packages.html#debian
