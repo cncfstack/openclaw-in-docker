@@ -51,8 +51,10 @@ RUN pnpm canvas:a2ui:bundle || \
      rm -rf vendor/a2ui apps/shared/OpenClawKit/Tools/CanvasA2UI)
 
 # 构建项目
-RUN pnpm build && pnpm build:docker && pnpm ui:build
-
+RUN pnpm build
+RUN pnpm ui:install
+RUN pnpm ui:build
+RUN pnpm build:docker
 
 # ============================================
 # 阶段 2: Runtime - 运行环境
