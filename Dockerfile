@@ -51,10 +51,11 @@ RUN pnpm canvas:a2ui:bundle || \
      rm -rf vendor/a2ui apps/shared/OpenClawKit/Tools/CanvasA2UI)
 
 # 构建项目
-RUN pnpm build
-RUN pnpm ui:install
-RUN pnpm ui:build
-RUN pnpm build:docker
+RUN pnpm build \
+    && pnpm ui:install \
+    && pnpm ui:build \
+    && pnpm build:docker
+
 RUN echo "/build =======> " \
     && ls -l /build \
     && echo "/build/dist======>" \
