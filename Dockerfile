@@ -33,13 +33,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # Clone openclaw
 ARG OPENCLAW_VERSION
 ENV OPENCLAW_VERSION=${OPENCLAW_VERSION}
-RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git . \
-    && rm -rf .git
-
-# 复制 package.json 文件（利用缓存）
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./ 2>/dev/null || true
-COPY ui/package.json ./ui/package.json 2>/dev/null || true
-
+RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git .
 
 # 安装所有依赖（包括 devDependencies）
 RUN --mount=type=cache,id=pnpm-store-build,target=/root/.local/share/pnpm/store,sharing=locked \
