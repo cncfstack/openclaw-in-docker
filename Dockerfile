@@ -1,55 +1,21 @@
-FROM registry.cncfstack.com/cncfstack/csvm:v0.2.0-bookworm
-# MIT License
+FROM registry.cncfstack.com/cncfstack/csvm:v0.2.0-bookworm AS builder
+# ============================================
+# 阶段 1: Builder - 编译和构建
+# ============================================
 
-# Copyright (c) 2026 藏云阁
+WORKDIR /build
 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
-LABEL org.opencontainers.image.base.name="registry.cnfstack.com/cncfstack/csvm:dev" \
-  org.opencontainers.image.source="https://cncfstack.com" \
-  org.opencontainers.image.url="https://cncfstack.com" \
-  org.opencontainers.image.documentation="https://cncfstack.com" \
-  org.opencontainers.image.licenses="MIT" \
-  org.opencontainers.image.title="OpenClaw In Docker" \
-  org.opencontainers.image.description="OpenClaw In Docker"
-
-WORKDIR /app
-
+# 安装构建工具
 ENV PATH="/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-# Install Node.js
+# 安装 Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - 
-RUN DEBIAN_FRONTEND=noninteractive clean-install nodejs \
-    && groupadd  node \
-    && useradd  --gid node --shell /bin/bash --create-home node \
-    && node --version \
-    && npm --version \
-    && rm -f /usr/share/keyrings/nodesource.gpg \
-    && rm -f /etc/apt/sources.list.d/nodesource.list \
-    && rm -f /etc/apt/sources.list.d/nodesource.sources
-
-# Install Bun (required for build scripts)
-#RUN GITHUB='https://gh-proxy.com/https://github.com' curl -fsSL https://bun.sh/install | bash
-# RUN curl -fsSL https://bun.sh/install | bash
-# RUN corepack enable
-# Install Bun (required for build scripts). Retry the whole bootstrap flow to
-# tolerate transient 5xx failures from bun.sh/GitHub during CI image builds.
+# 安装 Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && DEBIAN_FRONTEND=noninteractive clean-install nodejs \
+    && node --version && npm --version
+    
+# 安装 pnpm 和 bun
 RUN set -eux; \
     for attempt in 1 2 3 4 5; do \
       if curl --retry 5 --retry-all-errors --retry-delay 2 -fsSL https://bun.sh/install | bash; then \
@@ -61,10 +27,76 @@ RUN set -eux; \
       sleep $((attempt * 2)); \
     done
 ENV PATH="/root/.bun/bin:${PATH}"
-RUN corepack enable
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Install chromium
-RUN  DEBIAN_FRONTEND=noninteractive clean-install  chromium websockify  x11vnc novnc
+
+# Clone openclaw
+ARG OPENCLAW_VERSION
+ENV OPENCLAW_VERSION=${OPENCLAW_VERSION}
+RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git . \
+    && rm -rf .git
+
+# 复制 package.json 文件（利用缓存）
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./ 2>/dev/null || true
+COPY ui/package.json ./ui/package.json 2>/dev/null || true
+
+
+# 安装所有依赖（包括 devDependencies）
+RUN --mount=type=cache,id=pnpm-store-build,target=/root/.local/share/pnpm/store,sharing=locked \
+    NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
+
+# 处理 A2UI bundle（允许失败）
+# A2UI bundle may fail under QEMU cross-compilation (e.g. building amd64
+# on Apple Silicon). CI builds natively per-arch so this is a no-op there.
+# Stub it so local cross-arch builds still succeed.
+RUN pnpm canvas:a2ui:bundle || \
+    (echo "A2UI bundle: creating stub (non-fatal)" && \
+     mkdir -p src/canvas-host/a2ui && \
+     echo "/* A2UI bundle unavailable in this build */" > src/canvas-host/a2ui/a2ui.bundle.js && \
+     echo "stub" > src/canvas-host/a2ui/.bundle.hash && \
+     rm -rf vendor/a2ui apps/shared/OpenClawKit/Tools/CanvasA2UI)
+
+# 构建项目
+RUN pnpm build && pnpm build:docker && pnpm ui:build
+
+# 清理开发依赖（准备生产环境）
+RUN pnpm prune --prod && \
+    pnpm store prune && \
+    find . -type f \( -name "*.map" -o -name "*.d.ts" -o -name "*.d.mts" \) -delete
+
+
+
+
+# ============================================
+# 阶段 2: Runtime - 运行环境
+# ============================================
+FROM registry.cncfstack.com/cncfstack/csvm:v0.2.0-bookworm AS runtime
+
+LABEL org.opencontainers.image.base.name="registry.cnfstack.com/cncfstack/csvm:v0.2.0-bookworm" \
+  org.opencontainers.image.source="https://github.com/cncfstack/openclaw-in-docker" \
+  org.opencontainers.image.url="https://cncfstack.com/images/cncfstack/openclaw-in-docker" \
+  org.opencontainers.image.documentation="https://cncfstack.com/images/cncfstack/openclaw-in-docker" \
+  org.opencontainers.image.licenses="MIT" \
+  org.opencontainers.image.title="OpenClaw In Docker" \
+  org.opencontainers.image.description="OpenClaw In Docker 提供一个类似虚拟机的环境，一键运行 OpenClaw 服务，并提供安全的用户登录与 HTTPS 访问 OpenClaw 能力，使其可以便捷、安全的运行开放在互联网上。"
+
+ENV PATH="/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+WORKDIR /app
+
+# 安装运行时必需的系统包
+# 安装成功后需要删除 source.list，其他安装执行apt update时更新数据可能会导致内存OOM
+RUN DEBIAN_FRONTEND=noninteractive clean-install nodejs \
+        chromium \
+        xvfb \
+        curl \
+        ca-certificates \
+    && groupadd  node || true \
+    && useradd  --gid node --shell /bin/bash --create-home node || true \
+    && rm -f /usr/share/keyrings/nodesource.gpg \
+    && rm -f /etc/apt/sources.list.d/nodesource.list \
+    && rm -f /etc/apt/sources.list.d/nodesource.sources \
+
 
 # Install OpenResty
 # https://openresty.org/en/linux-packages.html#debian
@@ -89,50 +121,24 @@ RUN chmod +x /usr/local/bin/openclaw-make-ssl.sh \
     && systemctl enable openresty.service \
     && systemctl enable cron.service
 
-#  Cronjob, autoapprove
-# Cron在进行安装时，文件最后必须要有一个空行，否则会报错
-# new crontab file is missing newline before EOF, can't install.
-COPY crontab/openclaw-autoapprove-devices /tmp/openclaw-autoapprove-devices
-RUN echo "" >> /tmp/openclaw-autoapprove-devices \
-    && crontab /tmp/openclaw-autoapprove-devices \
-    && rm -f /tmp/openclaw-autoapprove-devices
+# 从 builder 阶段复制构建产物
+COPY --from=builder --chown=node:node /build/dist ./dist
+COPY --from=builder --chown=node:node /build/node_modules ./node_modules
+COPY --from=builder --chown=node:node /build/package.json .
+COPY --from=builder --chown=node:node /build/openclaw.mjs .
+COPY --from=builder --chown=node:node /build/ui/dist ./ui/dist
+COPY --from=builder --chown=node:node /build/extensions ./extensions
 
-################################################
-# 前面的Dockerfile尽量不同，在构建时尽量使用缓存
-ARG OPENCLAW_VERSION=2026.3.13-1
-ENV OPENCLAW_VERSION=${OPENCLAW_VERSION}
+# 安装 Playwright 浏览器
+RUN mkdir -p /home/node/.cache/ms-playwright && \
+    PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright \
+    node /app/node_modules/playwright-core/cli.js install chromium && \
+    chown -R node:node /home/node/.cache/ms-playwright
 
-# install openclaw
-#RUN git clone https://gh-proxy.com/https://github.com/openclaw/openclaw.git /app
-RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git . \
-    && rm -rf /app/.git
-
-RUN chown -R node:node /app
-
-# A2UI bundle may fail under QEMU cross-compilation (e.g. building amd64
-# on Apple Silicon). CI builds natively per-arch so this is a no-op there.
-# Stub it so local cross-arch builds still succeed.
-RUN pnpm canvas:a2ui:bundle || \
-    (echo "A2UI bundle: creating stub (non-fatal)" && \
-     mkdir -p src/canvas-host/a2ui && \
-     echo "/* A2UI bundle unavailable in this build */" > src/canvas-host/a2ui/a2ui.bundle.js && \
-     echo "stub" > src/canvas-host/a2ui/.bundle.hash && \
-     rm -rf vendor/a2ui apps/shared/OpenClawKit/Tools/CanvasA2UI)
-
-#RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile  --registry https://registry.npmmirror.com
-#RUN pnpm config set ignore-workspace-root-check true && pnpm add vite -w && NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
-# 默认安装缺少 vite 和 preview
-RUN --mount=type=cache,id=openclaw-pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
-    NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile \
-    && pnpm add vite -w \
-    && pnpm add lit @create-markdown/preview -w \
-    && cd /app/ui && pnpm add lit @create-markdown/preview -w && cd /app
-
-RUN pnpm build
-RUN pnpm build:docker
-RUN pnpm ui:install
-RUN pnpm ui:build
-RUN pnpm store prune && pnpm cache clean
+# 设置权限和符号链接
+RUN chmod +x /usr/local/bin/*.sh && \
+    ln -sf /app/openclaw.mjs /usr/local/bin/openclaw && \
+    chmod 755 /app/openclaw.mjs
 
 COPY scripts/openclaw-before.sh /usr/local/bin/openclaw-before.sh
 COPY scripts/openclaw-autoapprove-devices.sh  /usr/local/bin/openclaw-autoapprove-devices.sh
@@ -142,14 +148,13 @@ RUN chmod +x /usr/local/bin/openclaw-before.sh /usr/local/bin/openclaw-autoappro
     && chmod 755 /app/openclaw.mjs \
     && systemctl enable openclaw.service
 
-# Install playwright
-#Xvfb :1 -screen 0 1280x800x24 -ac -nolisten tcp &
-# 依赖 openclaw package.json 安装后才能执行
-RUN DEBIAN_FRONTEND=noninteractive clean-install  xvfb && \
-    mkdir -p /home/node/.cache/ms-playwright && \
-    PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright \
-    node /app/node_modules/playwright-core/cli.js install --with-deps chromium && \
-    chown -R node:node /home/node/.cache/ms-playwright
+# 切换到非 root 用户
+# USER node
 
-# 默认exec登录时的目录
-WORKDIR /root
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD node -e "fetch('http://localhost:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
+EXPOSE 18789 8080
+
+WORKDIR /app
