@@ -46,7 +46,21 @@ RUN DEBIAN_FRONTEND=noninteractive clean-install nodejs \
 
 # Install Bun (required for build scripts)
 #RUN GITHUB='https://gh-proxy.com/https://github.com' curl -fsSL https://bun.sh/install | bash
-RUN curl -fsSL https://bun.sh/install | bash
+# RUN curl -fsSL https://bun.sh/install | bash
+# RUN corepack enable
+# Install Bun (required for build scripts). Retry the whole bootstrap flow to
+# tolerate transient 5xx failures from bun.sh/GitHub during CI image builds.
+RUN set -eux; \
+    for attempt in 1 2 3 4 5; do \
+      if curl --retry 5 --retry-all-errors --retry-delay 2 -fsSL https://bun.sh/install | bash; then \
+        break; \
+      fi; \
+      if [ "$attempt" -eq 5 ]; then \
+        exit 1; \
+      fi; \
+      sleep $((attempt * 2)); \
+    done
+ENV PATH="/root/.bun/bin:${PATH}"
 RUN corepack enable
 
 # Install chromium
@@ -94,17 +108,31 @@ RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git .
     && rm -rf /app/.git
 
 RUN chown -R node:node /app
+
+# A2UI bundle may fail under QEMU cross-compilation (e.g. building amd64
+# on Apple Silicon). CI builds natively per-arch so this is a no-op there.
+# Stub it so local cross-arch builds still succeed.
+RUN pnpm canvas:a2ui:bundle || \
+    (echo "A2UI bundle: creating stub (non-fatal)" && \
+     mkdir -p src/canvas-host/a2ui && \
+     echo "/* A2UI bundle unavailable in this build */" > src/canvas-host/a2ui/a2ui.bundle.js && \
+     echo "stub" > src/canvas-host/a2ui/.bundle.hash && \
+     rm -rf vendor/a2ui apps/shared/OpenClawKit/Tools/CanvasA2UI)
+RUN pnpm build:docker
 #RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile  --registry https://registry.npmmirror.com
 #RUN pnpm config set ignore-workspace-root-check true && pnpm add vite -w && NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
 # 默认安装缺少 vite 和 preview
-RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile \
+RUN --mount=type=cache,id=openclaw-pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
+    NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile \
     && pnpm add vite -w \
     && pnpm add @create-markdown/preview -w \
-    && pnpm build \
-    && cd /app/ui && pnpm add @create-markdown/preview -w && cd /app \
-    && pnpm ui:install \
-    && pnpm ui:build \
-    && pnpm store prune && pnpm cache clean
+    && cd /app/ui && pnpm add @create-markdown/preview -w && cd /app
+
+RUN pnpm build
+RUN pnpm ui:install
+RUN pnpm ui:build
+RUN pnpm store prune && pnpm cache clean
+
 
 COPY scripts/openclaw-before.sh /usr/local/bin/openclaw-before.sh
 COPY scripts/openclaw-autoapprove-devices.sh  /usr/local/bin/openclaw-autoapprove-devices.sh
