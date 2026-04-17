@@ -125,15 +125,14 @@ RUN pnpm canvas:a2ui:bundle || \
 RUN --mount=type=cache,id=openclaw-pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
     NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile \
     && pnpm add vite -w \
-    && pnpm add @create-markdown/preview -w \
-    && cd /app/ui && pnpm add @create-markdown/preview -w && cd /app
+    && pnpm add lit @create-markdown/preview -w \
+    && cd /app/ui && pnpm add lit @create-markdown/preview -w && cd /app
 
 RUN pnpm build
 RUN pnpm build:docker
 RUN pnpm ui:install
 RUN pnpm ui:build
 RUN pnpm store prune && pnpm cache clean
-
 
 COPY scripts/openclaw-before.sh /usr/local/bin/openclaw-before.sh
 COPY scripts/openclaw-autoapprove-devices.sh  /usr/local/bin/openclaw-autoapprove-devices.sh
