@@ -36,24 +36,23 @@ RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git .
 
 # 安装所有依赖（包括 devDependencies）
 RUN --mount=type=cache,id=pnpm-store-build,target=/root/.local/share/pnpm/store,sharing=locked \
-    NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
-
+    NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile \
+        && pnpm build \
+        && pnpm ui:install \
+        && pnpm ui:build \
+        && pnpm build:docker
 # 处理 A2UI bundle（允许失败）
 # A2UI bundle may fail under QEMU cross-compilation (e.g. building amd64
 # on Apple Silicon). CI builds natively per-arch so this is a no-op there.
 # Stub it so local cross-arch builds still succeed.
-RUN pnpm canvas:a2ui:bundle || \
-    (echo "A2UI bundle: creating stub (non-fatal)" && \
-     mkdir -p src/canvas-host/a2ui && \
-     echo "/* A2UI bundle unavailable in this build */" > src/canvas-host/a2ui/a2ui.bundle.js && \
-     echo "stub" > src/canvas-host/a2ui/.bundle.hash && \
-     rm -rf vendor/a2ui apps/shared/OpenClawKit/Tools/CanvasA2UI)
+# RUN pnpm canvas:a2ui:bundle || \
+#     (echo "A2UI bundle: creating stub (non-fatal)" && \
+#      mkdir -p src/canvas-host/a2ui && \
+#      echo "/* A2UI bundle unavailable in this build */" > src/canvas-host/a2ui/a2ui.bundle.js && \
+#      echo "stub" > src/canvas-host/a2ui/.bundle.hash && \
+#      rm -rf vendor/a2ui apps/shared/OpenClawKit/Tools/CanvasA2UI)
 
-# 构建项目
-RUN pnpm build \
-    && pnpm ui:install \
-    && pnpm ui:build \
-    && pnpm build:docker
+
 
 
 # ============================================
