@@ -10,11 +10,19 @@ ENV PATH="/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin
 
 # 安装 Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - 
-# 安装 Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && DEBIAN_FRONTEND=noninteractive clean-install nodejs \
     && node --version && npm --version
-    
+
+# 关键的验证步骤，用于检查原生 Node.js 模块是否正确编译安装
+# matrix-sdk-crypto 是一个包含 Rust/C++ 原生代码的 npm 包：
+# 安装时需要编译原生代码（通过 node-gyp 或 wasm）
+# 在不同架构（x64、ARM64）上编译可能失败
+# 编译失败时，npm/pnpm 可能不会报错，只是跳过安装
+RUN echo "==> Verifying critical native addons..." && \
+    find /app/node_modules -name "matrix-sdk-crypto*.node" 2>/dev/null | grep -q . || \
+    (echo "ERROR: matrix-sdk-crypto native addon missing (pnpm install may have silently failed on this arch)" >&2 && exit 1)
+
 # 安装 pnpm 和 bun
 RUN set -eux; \
     for attempt in 1 2 3 4 5; do \
@@ -56,12 +64,6 @@ RUN pnpm build \
     && pnpm ui:build \
     && pnpm build:docker
 
-RUN echo "/build =======> " \
-    && ls -l /build \
-    && echo "/build/dist======>" \
-    && ls -l /build/dist \
-    && echo "/build/ui/dist======>" \
-    && ls -l /build/ui/dist
 
 # ============================================
 # 阶段 2: Runtime - 运行环境
