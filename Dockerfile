@@ -110,8 +110,7 @@ COPY --from=builder --chown=node:node /build/dist ./dist
 COPY --from=builder --chown=node:node /build/node_modules ./node_modules
 COPY --from=builder --chown=node:node /build/package.json .
 COPY --from=builder --chown=node:node /build/openclaw.mjs .
-COPY --from=builder --chown=node:node /build/ui/dist ./ui/dist
-COPY --from=builder --chown=node:node /build/extensions ./extensions
+
 
 # 安装 Playwright 浏览器
 RUN mkdir -p /home/node/.cache/ms-playwright && \
