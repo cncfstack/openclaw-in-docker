@@ -102,7 +102,7 @@ RUN pnpm add vite -w \
     && pnpm build \
     && pnpm ui:build \
     && pnpm prune --prod \
-    && pnpm store prune \
+    && CI=true pnpm store prune \
     && pnpm cache clean
 
 
