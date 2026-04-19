@@ -86,9 +86,7 @@ RUN systemctl enable cron.service
 ARG OPENCLAW_VERSION
 ENV OPENCLAW_VERSION=${OPENCLAW_VERSION}
 RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git . \
-    && rm -rf .git \
-    && rm -fr docs
-
+    && rm -rf .git 
 
 # ============================================
 # 编译构建OpenClaw
