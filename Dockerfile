@@ -1,20 +1,36 @@
 FROM registry.cncfstack.com/cncfstack/csvm:v0.2.1-bookworm AS builder
-# ============================================
-# 阶段 1: Builder - 编译和构建
-# ============================================
 
-WORKDIR /build
+LABEL org.opencontainers.image.base.name="registry.cnfstack.com/cncfstack/csvm:v0.2.0-bookworm" \
+  org.opencontainers.image.source="https://github.com/cncfstack/openclaw-in-docker" \
+  org.opencontainers.image.url="https://cncfstack.com/images/cncfstack/openclaw-in-docker" \
+  org.opencontainers.image.documentation="https://cncfstack.com/images/cncfstack/openclaw-in-docker" \
+  org.opencontainers.image.licenses="MIT" \
+  org.opencontainers.image.title="OpenClaw In Docker" \
+  org.opencontainers.image.description="OpenClaw In Docker 提供一个类似虚拟机的环境，一键运行 OpenClaw 服务，并提供安全的用户登录与 HTTPS 访问 OpenClaw 能力，使其可以便捷、安全的运行开放在互联网上。"
 
-# 安装构建工具
+WORKDIR /app
+
 ENV PATH="/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-# 安装 Node.js
+# ============================================
+# 安装 Node JS
+# OpenClaw 要求：openclaw: Node.js v22.12+ is required
+# ============================================
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - 
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && DEBIAN_FRONTEND=noninteractive clean-install nodejs \
-    && node --version && npm --version
+RUN DEBIAN_FRONTEND=noninteractive clean-install nodejs \
+    && groupadd  node \
+    && useradd  --gid node --shell /bin/bash --create-home node \
+    && node --version \
+    && npm --version \
+    && rm -f /usr/share/keyrings/nodesource.gpg \
+    && rm -f /etc/apt/sources.list.d/nodesource.list \
+    && rm -f /etc/apt/sources.list.d/nodesource.sources
 
+
+# ============================================
 # 安装 pnpm 和 bun
+# 直接安装 bun 可能会失败，需要进行多次尝试
+# ============================================
 RUN set -eux; \
     for attempt in 1 2 3 4 5; do \
       if curl --retry 5 --retry-all-errors --retry-delay 2 -fsSL https://bun.sh/install | bash; then \
@@ -29,51 +45,10 @@ ENV PATH="/root/.bun/bin:${PATH}"
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 
-# Clone openclaw
-ARG OPENCLAW_VERSION
-ENV OPENCLAW_VERSION=${OPENCLAW_VERSION}
-RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git .
-
-# 安装所有依赖（包括 devDependencies）
-RUN --mount=type=cache,id=pnpm-store-build,target=/root/.local/share/pnpm/store,sharing=locked \
-    NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile \
-        && pnpm build \
-        && pnpm ui:install \
-        && pnpm ui:build \
-        && pnpm build:docker
-# 处理 A2UI bundle（允许失败）
-# A2UI bundle may fail under QEMU cross-compilation (e.g. building amd64
-# on Apple Silicon). CI builds natively per-arch so this is a no-op there.
-# Stub it so local cross-arch builds still succeed.
-# RUN pnpm canvas:a2ui:bundle || \
-#     (echo "A2UI bundle: creating stub (non-fatal)" && \
-#      mkdir -p src/canvas-host/a2ui && \
-#      echo "/* A2UI bundle unavailable in this build */" > src/canvas-host/a2ui/a2ui.bundle.js && \
-#      echo "stub" > src/canvas-host/a2ui/.bundle.hash && \
-#      rm -rf vendor/a2ui apps/shared/OpenClawKit/Tools/CanvasA2UI)
-
-
-
 
 # ============================================
-# 阶段 2: Runtime - 运行环境
-# ============================================
-FROM registry.cncfstack.com/cncfstack/csvm:v0.2.1-bookworm AS runtime
-
-LABEL org.opencontainers.image.base.name="registry.cnfstack.com/cncfstack/csvm:v0.2.0-bookworm" \
-  org.opencontainers.image.source="https://github.com/cncfstack/openclaw-in-docker" \
-  org.opencontainers.image.url="https://cncfstack.com/images/cncfstack/openclaw-in-docker" \
-  org.opencontainers.image.documentation="https://cncfstack.com/images/cncfstack/openclaw-in-docker" \
-  org.opencontainers.image.licenses="MIT" \
-  org.opencontainers.image.title="OpenClaw In Docker" \
-  org.opencontainers.image.description="OpenClaw In Docker 提供一个类似虚拟机的环境，一键运行 OpenClaw 服务，并提供安全的用户登录与 HTTPS 访问 OpenClaw 能力，使其可以便捷、安全的运行开放在互联网上。"
-
-ENV PATH="/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-
-WORKDIR /app
-
 # 安装运行时必需的系统包
-# 安装成功后需要删除 source.list，其他安装执行apt update时更新数据可能会导致内存OOM
+# ============================================
 RUN DEBIAN_FRONTEND=noninteractive clean-install nodejs \
         chromium \
         xvfb \
@@ -82,8 +57,10 @@ RUN DEBIAN_FRONTEND=noninteractive clean-install nodejs \
     && groupadd  node  \
     && useradd  --gid node --shell /bin/bash --create-home node
 
+# ============================================
 # Install OpenResty
 # https://openresty.org/en/linux-packages.html#debian
+# ============================================
 COPY apt.d/openresty-*.sources /tmp/
 ARG TARGETARCH
 RUN case "$TARGETARCH" in \
@@ -102,27 +79,55 @@ COPY scripts/openclaw-make-ssl.sh /usr/local/bin/openclaw-make-ssl.sh
 COPY run_onboot /scripts/scripts.d
 COPY systemd/openresty.service /lib/systemd/system/openresty.service
 RUN chmod +x /usr/local/bin/openclaw-make-ssl.sh \
-    && systemctl enable openresty.service \
-    && systemctl enable cron.service
+    && systemctl enable openresty.service 
 
-# 从 builder 阶段复制构建产物
-COPY --from=builder --chown=node:node /build/dist ./dist
-COPY --from=builder --chown=node:node /build/node_modules ./node_modules
-COPY --from=builder --chown=node:node /build/package.json .
-COPY --from=builder --chown=node:node /build/openclaw.mjs .
+# ============================================
+# 开机启动crond服务
+# cond 服务是csvm中已经预置安装，但是默认没有启动
+# ============================================
+RUN systemctl enable cron.service
 
 
+# ============================================
 # 安装 Playwright 浏览器
+# ============================================
 RUN mkdir -p /home/node/.cache/ms-playwright && \
     PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright \
     node /app/node_modules/playwright-core/cli.js install chromium && \
     chown -R node:node /home/node/.cache/ms-playwright
 
-# 设置权限和符号链接
-RUN chmod +x /usr/local/bin/*.sh && \
-    ln -sf /app/openclaw.mjs /usr/local/bin/openclaw && \
-    chmod 755 /app/openclaw.mjs
 
+# ============================================
+# 下载OpenClaw源码
+# 获取源码后 .git 目录中的不需要了，删除 .git 减少镜像包大小
+# ============================================
+ARG OPENCLAW_VERSION
+ENV OPENCLAW_VERSION=${OPENCLAW_VERSION}
+RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git .
+    && rm -rf /app/.git
+
+# ============================================
+# 编译构建OpenClaw
+# 1. install 依赖 vite，在 package.json 中没有声明无法自动安装，这个后续关注
+# 2. 默认会安装所有依赖，包括 devDependencies，所以在后面需要清理掉dev包
+# 3. 将几个构建命令合并在一个RUN，减少层，降低空间大小
+# 4. pnpm prune --prod : 删除当前项目的 devDependencies	
+# 5. pnpm store prune : 清理全局存储中的未引用包	
+# 6. pnpm cache clean : 清理 pnpm 的下载缓存
+# ============================================
+RUN pnpm add vite -w \
+    && NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile \
+    && pnpm ui:install \
+    && pnpm build \
+    && pnpm ui:build \
+    && pnpm prune --prod \
+    && pnpm store prune \
+    && pnpm cache clean
+
+
+# ============================================
+# 配置openclaw
+# ============================================
 COPY scripts/openclaw-before.sh /usr/local/bin/openclaw-before.sh
 COPY scripts/openclaw-autoapprove-devices.sh  /usr/local/bin/openclaw-autoapprove-devices.sh
 COPY systemd/openclaw.service /usr/lib/systemd/system/openclaw.service
@@ -131,13 +136,15 @@ RUN chmod +x /usr/local/bin/openclaw-before.sh /usr/local/bin/openclaw-autoappro
     && chmod 755 /app/openclaw.mjs \
     && systemctl enable openclaw.service
 
-# 切换到非 root 用户
-# USER node
-
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD node -e "fetch('http://localhost:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-EXPOSE 18789 8080
+EXPOSE 18789 80 443
 
-WORKDIR /app
+# ============================================
+# 启动OpenClaw
+# 1. 默认用户是root，工作目录切换到 /root
+# 2. 启动服务不需要任何配置，openclaw是基于 systemd 服务自动启动的，这里不需要CMD指令
+# ============================================
+WORKDIR /root
