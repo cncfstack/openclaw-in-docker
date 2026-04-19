@@ -12,14 +12,15 @@ WORKDIR /app
 
 ENV PATH="/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
+
 # ============================================
 # 安装 Node JS
 # OpenClaw 要求：openclaw: Node.js v22.12+ is required
+# csvm 中默认有 node 18 版本，需要新增一个 v22
+#  node 用户和组已经存在，不需要再创建
 # ============================================
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - 
 RUN DEBIAN_FRONTEND=noninteractive clean-install nodejs \
-    && groupadd  node \
-    && useradd  --gid node --shell /bin/bash --create-home node \
     && node --version \
     && npm --version \
     && rm -f /usr/share/keyrings/nodesource.gpg \
@@ -45,7 +46,6 @@ ENV PATH="/root/.bun/bin:${PATH}"
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 
-
 # ============================================
 # 安装运行时必需的系统包
 # ============================================
@@ -56,6 +56,7 @@ RUN DEBIAN_FRONTEND=noninteractive clean-install nodejs \
         ca-certificates \
     && groupadd  node  \
     && useradd  --gid node --shell /bin/bash --create-home node
+
 
 # ============================================
 # Install OpenResty
@@ -81,6 +82,7 @@ COPY systemd/openresty.service /lib/systemd/system/openresty.service
 RUN chmod +x /usr/local/bin/openclaw-make-ssl.sh \
     && systemctl enable openresty.service 
 
+
 # ============================================
 # 开机启动crond服务
 # cond 服务是csvm中已经预置安装，但是默认没有启动
@@ -105,6 +107,7 @@ ARG OPENCLAW_VERSION
 ENV OPENCLAW_VERSION=${OPENCLAW_VERSION}
 RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git . \
     && rm -rf .git
+
 
 # ============================================
 # 编译构建OpenClaw
@@ -136,15 +139,16 @@ RUN chmod +x /usr/local/bin/openclaw-before.sh /usr/local/bin/openclaw-autoappro
     && chmod 755 /app/openclaw.mjs \
     && systemctl enable openclaw.service
 
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD node -e "fetch('http://localhost:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-
-EXPOSE 18789 80 443
 
 # ============================================
 # 启动OpenClaw
 # 1. 默认用户是root，工作目录切换到 /root
 # 2. 启动服务不需要任何配置，openclaw是基于 systemd 服务自动启动的，这里不需要CMD指令
 # ============================================
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD node -e "fetch('http://localhost:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
 WORKDIR /root
+
+EXPOSE 18789 80 443
