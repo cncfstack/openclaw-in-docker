@@ -45,6 +45,7 @@ RUN set -eux; \
 ENV PATH="/root/.bun/bin:${PATH}"
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
+
 # ============================================
 # Install OpenResty
 # https://openresty.org/en/linux-packages.html#debian
@@ -80,11 +81,13 @@ RUN systemctl enable cron.service
 # ============================================
 # 下载OpenClaw源码
 # 获取源码后 .git 目录中的不需要了，删除 .git 减少镜像包大小
+# docs apps assets 目录资源不影响运行，可以删除
 # ============================================
 ARG OPENCLAW_VERSION
 ENV OPENCLAW_VERSION=${OPENCLAW_VERSION}
 RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git . \
-    && rm -rf .git
+    && rm -rf .git \
+    && rm -fr docs apps assets
 
 
 # ============================================
@@ -104,9 +107,10 @@ RUN pnpm add vite -w \
     && pnpm ui:build \
     && pnpm prune --prod \
     && pnpm store prune \
-    && pnpm cache clean
+    && pnpm cache clean \
+    && find dist -type f \( -name '*.d.ts' -o -name '*.d.mts' -o -name '*.d.cts' -o -name '*.map' \) -delete
 
-
+    
 # ============================================
 # 配置openclaw
 # ============================================
