@@ -96,13 +96,14 @@ RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git .
 # 5. pnpm store prune : 清理全局存储中的未引用包	
 # 6. pnpm cache clean : 清理 pnpm 的下载缓存
 # ============================================
+ENV CI=true
 RUN pnpm add vite -w \
     && NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile \
     && pnpm ui:install \
     && pnpm build \
     && pnpm ui:build \
     && pnpm prune --prod \
-    && CI=true pnpm store prune \
+    && pnpm store prune \
     && pnpm cache clean
 
 
