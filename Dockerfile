@@ -45,19 +45,6 @@ RUN set -eux; \
 ENV PATH="/root/.bun/bin:${PATH}"
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-
-# ============================================
-# 安装运行时必需的系统包
-# ============================================
-RUN DEBIAN_FRONTEND=noninteractive clean-install nodejs \
-        chromium \
-        xvfb \
-        curl \
-        ca-certificates \
-    && groupadd  node  \
-    && useradd  --gid node --shell /bin/bash --create-home node
-
-
 # ============================================
 # Install OpenResty
 # https://openresty.org/en/linux-packages.html#debian
@@ -88,15 +75,6 @@ RUN chmod +x /usr/local/bin/openclaw-make-ssl.sh \
 # cond 服务是csvm中已经预置安装，但是默认没有启动
 # ============================================
 RUN systemctl enable cron.service
-
-
-# ============================================
-# 安装 Playwright 浏览器
-# ============================================
-RUN mkdir -p /home/node/.cache/ms-playwright && \
-    PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright \
-    node /app/node_modules/playwright-core/cli.js install chromium && \
-    chown -R node:node /home/node/.cache/ms-playwright
 
 
 # ============================================
