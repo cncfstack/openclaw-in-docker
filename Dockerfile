@@ -103,7 +103,7 @@ RUN mkdir -p /home/node/.cache/ms-playwright && \
 # ============================================
 ARG OPENCLAW_VERSION
 ENV OPENCLAW_VERSION=${OPENCLAW_VERSION}
-RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git .
+RUN git clone -b v${OPENCLAW_VERSION} https://github.com/openclaw/openclaw.git . \
     && rm -rf .git
 
 # ============================================
