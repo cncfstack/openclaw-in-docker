@@ -1,6 +1,6 @@
 # OpenClaw In Docker
 
-OpenClaw In Docker 提供一个类似虚拟机的环境，一键运行 OpenClaw 服务，并提供安全的用户登录与 HTTPS 访问 OpenClaw 能力，使其可以便捷、安全的运行开放在互联网上。
+OpenClaw In Docker 提供一个类似虚拟机的环境，一键运行 OpenClaw 服务，并提供额外安全的用户登录与 HTTPS 访问 OpenClaw 能力，使其可以便捷、安全的运行开放在互联网上。
 
 OpenClaw In Docker 特点：
 

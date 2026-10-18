@@ -19,7 +19,7 @@ ENV PATH="/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin
 # csvm 中默认有 node 18 版本，需要新增一个 v22
 #  node 用户和组已经存在，不需要再创建
 # ============================================
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - 
+RUN curl -fsSL https://deb.nodesource.com/setup_26.x | sudo -E bash - 
 RUN DEBIAN_FRONTEND=noninteractive clean-install nodejs \
     && node --version \
     && npm --version \
