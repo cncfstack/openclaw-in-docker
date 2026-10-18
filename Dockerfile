@@ -20,6 +20,8 @@ ENV PATH="/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin
 #  node 用户和组已经存在，不需要再创建
 # ============================================
 RUN curl -fsSL https://deb.nodesource.com/setup_26.x | sudo -E bash - 
+# 默认node安装没有找到 corepack 命令
+RUN npm -g install corepack
 RUN DEBIAN_FRONTEND=noninteractive clean-install nodejs \
     && node --version \
     && npm --version \
