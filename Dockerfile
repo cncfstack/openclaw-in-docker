@@ -8,9 +8,10 @@ LABEL org.opencontainers.image.base.name="registry.cnfstack.com/cncfstack/csvm:v
   org.opencontainers.image.title="OpenClaw In Docker" \
   org.opencontainers.image.description="OpenClaw In Docker 提供一个类似虚拟机的环境，一键运行 OpenClaw 服务，并提供安全的用户登录与 HTTPS 访问 OpenClaw 能力，使其可以便捷、安全的运行开放在互联网上。"
 
-WORKDIR /app
-
 ENV PATH="/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+RUN useradd -m -s /bin/bash openclaw-in-docker
+USER openclaw-in-docker
 
 RUN curl -fsSL https://deb.nodesource.com/setup_26.x | sudo -E bash -
 RUN apt-get install -y nodejs
@@ -46,7 +47,8 @@ RUN chmod +x /usr/local/bin/openclaw-make-ssl.sh \
 RUN systemctl enable cron.service
 
 # 安装 openclaw，不初始化
-RUN OPENCLAW_NO_ONBOARD=1 curl -fsSL https://openclaw.ai/install.sh | bash
+RUN curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
+RUN openclaw gateway install
  
 # ============================================
 # 配置openclaw
