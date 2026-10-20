@@ -10,7 +10,9 @@ LABEL org.opencontainers.image.base.name="registry.cnfstack.com/cncfstack/csvm:v
 
 ENV PATH="/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-RUN useradd -m -s /bin/bash openclaw-in-docker
+RUN useradd -m -s /bin/bash openclaw-in-docker && \
+    echo "openclaw-in-docker ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/openclaw-in-docker && \
+    chmod 0440 /etc/sudoers.d/openclaw-in-docker
 USER openclaw-in-docker
 
 RUN sudo curl -fsSL https://deb.nodesource.com/setup_26.x | sudo -E bash -
