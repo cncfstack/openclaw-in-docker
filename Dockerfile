@@ -13,8 +13,8 @@ ENV PATH="/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin
 RUN useradd -m -s /bin/bash openclaw-in-docker
 USER openclaw-in-docker
 
-RUN curl -fsSL https://deb.nodesource.com/setup_26.x | sudo -E bash -
-RUN apt-get install -y nodejs
+RUN sudo curl -fsSL https://deb.nodesource.com/setup_26.x | sudo -E bash -
+RUN sudo apt-get install -y nodejs
 
 # ============================================
 # Install OpenResty
